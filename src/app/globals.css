@@ -1,0 +1,162 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+  Paleta Tec5.Tech
+  ------------------
+  Primario: rojo Tec5 (HSL 0 82% 52% aprox)
+  Secundario: grises (neutral 200–800)
+  Fondo claro: blanco puro / casi blanco
+  Fondo oscuro: casi negro / carbón
+*/
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 0 0% 10%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 10%;
+
+    --muted: 0 0% 96%;
+    --muted-foreground: 0 0% 42%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 10%;
+
+    --border: 0 0% 90%;
+    --input: 0 0% 90%;
+    --ring: 0 82% 52%;
+
+    --primary: 0 82% 52%;              /* Rojo Tec5 */
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 0 0% 94%;             /* Gris claro */
+    --secondary-foreground: 0 0% 15%;
+
+    --accent: 0 0% 35%;                /* Gris oscuro (acento) */
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 82% 52%;
+    --destructive-foreground: 0 0% 100%;
+
+    --radius: 0.75rem;
+  }
+
+  .dark {
+    --background: 0 0% 7%;
+    --foreground: 0 0% 98%;
+
+    --card: 0 0% 10%;
+    --card-foreground: 0 0% 98%;
+
+    --muted: 0 0% 14%;
+    --muted-foreground: 0 0% 65%;
+
+    --popover: 0 0% 10%;
+    --popover-foreground: 0 0% 98%;
+
+    --border: 0 0% 18%;
+    --input: 0 0% 18%;
+    --ring: 0 85% 58%;
+
+    --primary: 0 85% 58%;              /* Rojo un poco más luminoso en dark */
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 0 0% 14%;
+    --secondary-foreground: 0 0% 98%;
+
+    --accent: 0 0% 75%;                /* Gris claro (acento en dark) */
+    --accent-foreground: 0 0% 10%;
+
+    --destructive: 0 85% 58%;
+    --destructive-foreground: 0 0% 100%;
+  }
+
+  * {
+    @apply border-border;
+  }
+  html, body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "cv11", "ss01";
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  ::selection {
+    background: hsl(var(--primary) / 0.35);
+    color: hsl(var(--primary-foreground));
+  }
+}
+
+@layer components {
+  /* Card con cristal sutil (performante, sin blur pesado) */
+  .glass {
+    @apply relative rounded-xl border border-border bg-card shadow-sm;
+  }
+  .glass-strong {
+    @apply rounded-xl border border-border bg-card shadow-sm;
+  }
+
+  /* Anillo rojo al hover */
+  .neon-ring {
+    @apply transition-colors duration-200;
+  }
+  .neon-ring:hover {
+    box-shadow: 0 0 0 1px hsl(var(--primary) / 0.5);
+  }
+
+  .gradient-text {
+    @apply bg-clip-text text-transparent;
+    background-image: linear-gradient(
+      120deg,
+      hsl(var(--primary)) 0%,
+      hsl(0 0% 35%) 100%
+    );
+  }
+  .dark .gradient-text {
+    background-image: linear-gradient(
+      120deg,
+      hsl(var(--primary)) 0%,
+      hsl(0 0% 85%) 100%
+    );
+  }
+
+  /* Fondo sutil en páginas de auth (sin animación costosa) */
+  .bg-brand-gradient {
+    background:
+      radial-gradient(80% 60% at 100% 0%, hsl(var(--primary) / 0.12) 0%, transparent 60%),
+      radial-gradient(60% 50% at 0% 100%, hsl(0 0% 40% / 0.10) 0%, transparent 60%);
+  }
+
+  /* KPI status colors */
+  .kpi-good  { @apply text-emerald-500; }
+  .kpi-warn  { @apply text-amber-500; }
+  .kpi-bad   { @apply text-rose-500; }
+}
+
+/* Recharts */
+.recharts-default-tooltip {
+  background: hsl(var(--popover)) !important;
+  border: 1px solid hsl(var(--border)) !important;
+  border-radius: 10px !important;
+  box-shadow: 0 6px 24px -8px rgba(0,0,0,0.25) !important;
+}
+.recharts-cartesian-axis-tick text {
+  fill: hsl(var(--muted-foreground)) !important;
+  font-size: 11px;
+}
+.recharts-cartesian-grid line {
+  stroke: hsl(var(--border)) !important;
+  stroke-opacity: 0.6;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--border));
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover { background: hsl(var(--primary) / 0.5); }

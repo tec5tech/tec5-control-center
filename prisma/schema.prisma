@@ -1,0 +1,237 @@
+// -----------------------------------------------------------------------------
+// Tec5.Tech · Control Center · Prisma schema
+// Dev: SQLite (sin instalación). Producción: cambiar provider a "postgresql"
+// y reemplazar `tagsJson String` por `tags String[]`, los `Float` sensibles
+// por `Decimal @db.Decimal(12,2)` y los `String` largos por `@db.Text`.
+// -----------------------------------------------------------------------------
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ------------------- AUTH -------------------
+// Role: ADMIN | MANAGER | VIEWER  (SQLite no soporta enums → string + check en app)
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  passwordHash  String?
+  role          String    @default("VIEWER")
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  accounts            Account[]
+  sessions            Session[]
+  campaigns           Campaign[] @relation("CampaignOwner")
+  kpis                Kpi[]      @relation("KpiOwner")
+  telegramSubscriber  TelegramSubscriber?
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ------------------- CAMPAIGNS -------------------
+// Channel: GOOGLE_ADS | META_ADS | YT_ADS | SEO | GEO | EMAIL_OUTREACH | LINKEDIN_OUTREACH | PODCAST | WEBINAR
+// CampaignStatus: DRAFT | ACTIVE | PAUSED | ENDED
+
+model Campaign {
+  id          String         @id @default(cuid())
+  name        String
+  channel     String
+  status      String         @default("DRAFT")
+  objective   String?
+  audience    String?
+  budget      Float          @default(0)
+  spend       Float          @default(0)
+  startDate   DateTime?
+  endDate     DateTime?
+  description String?
+  tagsJson    String         @default("[]")
+  ownerId     String?
+  owner       User?          @relation("CampaignOwner", fields: [ownerId], references: [id])
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  metrics MetricSnapshot[]
+  kpis    Kpi[]
+  alerts  AlertEvent[]
+
+  @@index([channel, status])
+  @@index([ownerId])
+}
+
+model MetricSnapshot {
+  id           String   @id @default(cuid())
+  campaignId   String
+  campaign     Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  date         DateTime
+  impressions  Int      @default(0)
+  clicks       Int      @default(0)
+  conversions  Int      @default(0)
+  cost         Float    @default(0)
+  revenue      Float    @default(0)
+  leads        Int      @default(0)
+  mqls         Int      @default(0)
+  sqls         Int      @default(0)
+  deals        Int      @default(0)
+  extraJson    String?
+  createdAt    DateTime @default(now())
+
+  @@unique([campaignId, date])
+  @@index([date])
+}
+
+// ------------------- KPIs -------------------
+// KpiUnit: NUMBER | PERCENT | CURRENCY | RATIO | DURATION
+// KpiDirection: HIGHER_IS_BETTER | LOWER_IS_BETTER
+
+model Kpi {
+  id          String    @id @default(cuid())
+  name        String
+  description String?
+  unit        String    @default("NUMBER")
+  direction   String    @default("HIGHER_IS_BETTER")
+  target      Float
+  current     Float     @default(0)
+  channel     String?
+  campaignId  String?
+  campaign    Campaign? @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+  ownerId     String?
+  owner       User?     @relation("KpiOwner", fields: [ownerId], references: [id])
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([channel])
+}
+
+// ------------------- INTEGRATIONS -------------------
+// Guarda las credenciales/config por canal para las APIs reales.
+// IMPORTANTE: en producción hay que cifrar `credentialsJson` con una KMS o
+// libsodium (sealed box). Acá queda como string plano para dev.
+// ConnectionStatus: NOT_CONFIGURED | CONNECTED | ERROR | DISCONNECTED
+
+model Integration {
+  id               String    @id @default(cuid())
+  channel          String    @unique
+  status           String    @default("NOT_CONFIGURED")
+  credentialsJson  String    @default("{}")
+  lastSyncAt          DateTime?
+  lastError           String?
+  syncIntervalMinutes Int       @default(60)
+  updatedById         String?
+  createdAt           DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+}
+
+// ------------------- AUDIT -------------------
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  actorId   String?
+  action    String
+  target    String?
+  metaJson  String?
+  createdAt DateTime @default(now())
+
+  @@index([actorId])
+  @@index([createdAt])
+}
+
+// ------------------- ALERTS & NOTIFICATIONS -------------------
+// Tipos de alerta usados por el motor (string, no enum, por SQLite):
+//   BUDGET_OVERRUN     · gasto excedió el presupuesto
+//   BUDGET_LEFTOVER    · presupuesto vencido y quedó saldo sin usar
+//   BUDGET_PACE        · ritmo de gasto adelantado/atrasado vs el día del mes
+//   NEW_LEAD           · entró un lead nuevo
+//   TOP_CAMPAIGN       · campaña ganadora del período
+//   ACTION_NEEDED      · campaña gastando sin generar leads / KPI en rojo / etc.
+//   CAMPAIGN_PAUSED    · campaña pasó a PAUSED
+// Severidad → semáforo: OK=verde · WARN=amarillo · CRITICAL=rojo · INFO=neutral
+
+model AlertEvent {
+  id           String   @id @default(cuid())
+  type         String
+  severity     String   @default("INFO")
+  channel      String?
+  campaignId   String?
+  campaign     Campaign? @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+  title        String
+  message      String
+  payloadJson  String?
+  read         Boolean  @default(false)
+  telegramSent Boolean  @default(false)
+  createdAt    DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([channel])
+  @@index([type])
+  @@index([read])
+}
+
+// Bot global de Telegram (singleton: id="default").
+// El token vive cifrado en producción; en dev queda plano.
+model TelegramConfig {
+  id          String   @id @default("default")
+  botToken    String
+  botUsername String?
+  enabled     Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// Una fila por usuario que se suscribió al bot. Para vincular a un usuario,
+// el dueño abre un /start <linkCode> en el bot y el webhook lo asocia.
+// channelsJson = "[]" significa todos los canales; si no, lista de canales filtro.
+// alertsJson    = "[]" significa todos los tipos; si no, lista de tipos filtro.
+model TelegramSubscriber {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  chatId      String?
+  linkCode    String   @unique
+  enabled     Boolean  @default(true)
+  channelsJson String  @default("[]")
+  alertsJson   String  @default("[]")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}

@@ -1,0 +1,17 @@
+node_modules
+.next
+.git
+.gitignore
+.env
+.env.local
+.env.*.local
+*.md
+.vscode
+.idea
+.claude
+_propuesta_cliente
+migration-dump
+prisma/dev.db
+prisma/dev.db-journal
+tsconfig.tsbuildinfo
+.refresh-token.txt

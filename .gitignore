@@ -1,0 +1,26 @@
+node_modules
+.next
+.env
+.env.local
+.refresh-token.txt
+.DS_Store
+*.log
+.vercel
+coverage
+dist
+
+# Dump de migración SQLite → Postgres (contiene credenciales sensibles)
+migration-dump/
+
+# SQLite local de desarrollo (contiene datos sensibles)
+prisma/*.db
+prisma/*.db-journal
+
+# TypeScript incremental build cache
+tsconfig.tsbuildinfo
+
+# Configuración local de Claude Code (no compartir)
+.claude/
+
+# Documentos internos / propuestas de cliente (no van al repo público)
+_propuesta_cliente/
