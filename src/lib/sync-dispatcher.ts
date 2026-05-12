@@ -2,6 +2,7 @@ import { syncGoogleAds } from "@/lib/google-ads-sync";
 import { syncMetaAds } from "@/lib/meta-sync";
 import { syncEmailLemlist } from "@/lib/lemlist-sync";
 import { syncLinkedinLemlist } from "@/lib/lemlist-linkedin-sync";
+import { syncGeo } from "@/lib/geo-sync";
 import type { Channel } from "@/types/db";
 
 type SyncOk = { ok: true; result?: unknown };
@@ -16,6 +17,7 @@ const SYNCERS: Partial<Record<Channel, (actorId?: string) => Promise<unknown>>> 
   META_ADS: syncMetaAds,
   EMAIL_OUTREACH: syncEmailLemlist,
   LINKEDIN_OUTREACH: syncLinkedinLemlist,
+  GEO: syncGeo,
 };
 
 export async function syncDispatcher(

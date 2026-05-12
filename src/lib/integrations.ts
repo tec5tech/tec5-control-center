@@ -70,13 +70,14 @@ export const INTEGRATIONS: Record<Channel, IntegrationSpec> = {
   GEO: {
     channel: "GEO",
     label: "GEO (optimización para motores de IA)",
-    description: "Tracking de menciones y citaciones en ChatGPT, Claude, Perplexity y Google AI Overviews.",
-    docsUrl: "https://platform.openai.com/docs",
+    description: "Tracking de menciones y citaciones en Claude, ChatGPT y Perplexity. Te dice cuándo la IA te recomienda y cuándo no.",
+    docsUrl: "https://docs.anthropic.com/en/api/messages",
     fields: [
-      { key: "openaiApiKey",     label: "OpenAI API Key",    type: "password", placeholder: "sk-...", help: "Para chequear menciones en ChatGPT." },
-      { key: "anthropicApiKey",  label: "Anthropic API Key", type: "password", placeholder: "sk-ant-...", help: "Para chequear menciones en Claude." },
-      { key: "perplexityApiKey", label: "Perplexity API Key", type: "password", optional: true },
-      { key: "targetQueries",    label: "Queries a monitorear (separadas por coma)", type: "text", placeholder: "tec5, plataforma datos argentina, ...", help: "Prompts que le hacemos a las IAs para ver si aparece Tec5." },
+      { key: "anthropicApiKey",  label: "Anthropic API Key", type: "password", placeholder: "sk-ant-api03-...", help: "Obtenela en console.anthropic.com/settings/keys. Modelo usado: claude-haiku-4-5 (cheap)." },
+      { key: "openaiApiKey",     label: "OpenAI API Key (opcional)",    type: "password", placeholder: "sk-...", help: "Si la tenés, sumamos ChatGPT al monitoreo.", optional: true },
+      { key: "perplexityApiKey", label: "Perplexity API Key (opcional)", type: "password", optional: true },
+      { key: "brandNames",       label: "Variantes del nombre de marca a detectar", type: "text", placeholder: "Tec5, Tec5.Tech, tec5tech, tec5.tech", help: "Separadas por coma. Detección case-insensitive." },
+      { key: "targetQueries",    label: "Queries a monitorear", type: "text", placeholder: "Mejor proveedor IT en Argentina | Empresas de ciberseguridad Fortinet en CABA | ...", help: "Separadas por pipe (|). Cada query se le pregunta a la IA y vemos si te menciona." },
     ],
   },
   EMAIL_OUTREACH: {
