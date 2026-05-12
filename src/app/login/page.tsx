@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { LoginForm } from "./login-form";
 import Link from "next/link";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -48,7 +49,9 @@ export default function LoginPage() {
             <ThemeToggle />
           </div>
           <div className="flex-1 grid place-items-center px-6 pb-10">
-            <LoginForm />
+            <Suspense fallback={null}>
+              <LoginForm />
+            </Suspense>
           </div>
         </div>
       </div>
