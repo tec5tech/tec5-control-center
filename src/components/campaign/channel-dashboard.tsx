@@ -238,7 +238,7 @@ export function ChannelDashboard({ channel, campaigns, snapshots, integration, h
 
   const activeCount = campaigns.filter((c) => c.status === "ACTIVE").length;
 
-  const handleBarClick = (row: { campaignId?: unknown }) => {
+  const handleBarClick = (row: Record<string, unknown>) => {
     const id = typeof row.campaignId === "string" ? row.campaignId : null;
     if (!id) return;
     setSelectedId((prev) => (prev === id ? null : id));

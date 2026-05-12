@@ -108,7 +108,7 @@ export async function syncLinkedinLemlist(actorId?: string): Promise<LinkedinSyn
 
   try {
     // 0) Equipo (para el accountName)
-    const team = await lemlistFetch<{ name?: string }>("/team", apiKey).catch(() => ({}));
+    const team: { name?: string } = await lemlistFetch<{ name?: string }>("/team", apiKey).catch(() => ({}));
     const accountName = `Lemlist · ${team.name ?? "Cuenta"}`;
 
     // 1) Lista de campañas (las mismas que email — algunas tendrán activity LinkedIn, otras no)

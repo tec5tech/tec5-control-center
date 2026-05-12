@@ -100,7 +100,7 @@ export async function syncEmailLemlist(actorId?: string): Promise<LemlistSyncRes
 
   try {
     // 0) Equipo (para el nombre)
-    const team = await lemlistFetch<{ name?: string }>("/team", apiKey).catch(() => ({}));
+    const team: { name?: string } = await lemlistFetch<{ name?: string }>("/team", apiKey).catch(() => ({}));
     const accountName = `Lemlist · ${team.name ?? "Cuenta"}`;
 
     // 1) Campañas
