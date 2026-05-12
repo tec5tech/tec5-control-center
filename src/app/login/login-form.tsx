@@ -21,8 +21,8 @@ import {
 export function LoginForm() {
   const router = useRouter();
   const params = useSearchParams();
-  const [email, setEmail] = useState("admin@tec5.tech");
-  const [password, setPassword] = useState("Tec5!Admin2026");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [showPw, setShowPw] = useState(false);
   const [pending, startTransition] = useTransition();
 
@@ -104,12 +104,6 @@ export function LoginForm() {
               {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <LogIn className="h-4 w-4" />}
               Entrar
             </Button>
-            <div className="rounded-lg border border-border bg-muted/30 p-3 text-xs text-muted-foreground">
-              <p className="font-semibold mb-1">Cuentas demo:</p>
-              <p>• admin@tec5.tech · Tec5!Admin2026 (Admin)</p>
-              <p>• manager@tec5.tech · Manager!2026 (Manager)</p>
-              <p>• viewer@tec5.tech · Viewer!2026 (Viewer)</p>
-            </div>
           </form>
         </CardContent>
       </Card>

@@ -271,7 +271,7 @@ export function ChannelDashboard({ channel, campaigns, snapshots, integration, h
           </div>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
-          {isLive ? (
+          {isLive && (
             <Badge variant="active" className="gap-1">
               <Zap className="h-3 w-3" /> Datos en vivo
               {integration?.lastSyncAt && (
@@ -285,8 +285,6 @@ export function ChannelDashboard({ channel, campaigns, snapshots, integration, h
                 </span>
               )}
             </Badge>
-          ) : (
-            <Badge variant="draft">Datos demo</Badge>
           )}
           <Badge variant="outline">{rangeLabel}</Badge>
           {isLive && <SyncButton channel={channel} label="Actualizar" />}
