@@ -2,6 +2,115 @@ import { prisma } from "@/lib/db";
 import { CHANNELS } from "@/lib/constants";
 import type { Channel } from "@/types/db";
 
+// ─── Channel-detail types ────────────────────────────────────────────────────
+
+export type ChannelDetailKpis = {
+  invested: number;
+  returned: number;
+  profit: number;
+  roi: number; // returned / invested (0 if no investment)
+};
+
+export type ChannelDailySeries = {
+  date: string; // YYYY-MM-DD
+  cost: number;
+  revenue: number;
+};
+
+export type CampaignRoiRow = {
+  campaignId: string;
+  name: string;
+  cost: number;
+  revenue: number;
+  roi: number; // 0 if cost === 0
+  color: string; // green if roi >= 1, red otherwise
+};
+
+export type ChannelDetailMetrics = {
+  kpis: ChannelDetailKpis;
+  daily: ChannelDailySeries[];
+  campaigns: CampaignRoiRow[];
+};
+
+export async function getChannelDetailMetrics(
+  channel: Channel,
+  from: Date,
+  to: Date,
+): Promise<ChannelDetailMetrics> {
+  const meta = CHANNELS.find((c) => c.key === channel);
+
+  const campaigns = await prisma.campaign.findMany({
+    where: { channel },
+    select: {
+      id: true,
+      name: true,
+      metrics: {
+        where: { date: { gte: from, lte: to } },
+        select: { date: true, cost: true, revenue: true },
+      },
+    },
+  });
+
+  // Aggregate totals
+  let invested = 0;
+  let returned = 0;
+
+  // Daily series — keyed by YYYY-MM-DD
+  const dailyMap = new Map<string, { cost: number; revenue: number }>();
+
+  // Per-campaign rows
+  const campaignRows: CampaignRoiRow[] = [];
+
+  for (const c of campaigns) {
+    let cCost = 0;
+    let cRevenue = 0;
+
+    for (const m of c.metrics) {
+      const cost = Number(m.cost);
+      const revenue = Number(m.revenue);
+      const day = m.date.toISOString().slice(0, 10);
+
+      cCost += cost;
+      cRevenue += revenue;
+      invested += cost;
+      returned += revenue;
+
+      const prev = dailyMap.get(day) ?? { cost: 0, revenue: 0 };
+      prev.cost += cost;
+      prev.revenue += revenue;
+      dailyMap.set(day, prev);
+    }
+
+    const roi = cCost > 0 ? cRevenue / cCost : 0;
+    campaignRows.push({
+      campaignId: c.id,
+      name: c.name.length > 28 ? c.name.slice(0, 26) + "…" : c.name,
+      cost: cCost,
+      revenue: cRevenue,
+      roi,
+      color: roi >= 1 ? "#10b981" : "#ef4444",
+    });
+  }
+
+  const profit = returned - invested;
+  const roi = invested > 0 ? returned / invested : 0;
+
+  const daily: ChannelDailySeries[] = Array.from(dailyMap.entries())
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([date, v]) => ({ date, ...v }));
+
+  const sortedCampaigns = [...campaignRows]
+    .filter((r) => r.cost > 0 || r.revenue > 0)
+    .sort((a, b) => b.roi - a.roi)
+    .slice(0, 10);
+
+  return {
+    kpis: { invested, returned, profit, roi },
+    daily,
+    campaigns: sortedCampaigns,
+  };
+}
+
 export type ChannelMetrics = {
   channel: Channel;
   slug: string;

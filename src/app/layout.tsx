@@ -24,7 +24,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="es" suppressHydrationWarning className={`${sans.variable} ${mono.variable}`}>
       <body className="min-h-screen antialiased font-sans" suppressHydrationWarning>
-        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
+        <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
           {children}
           <Toaster richColors position="top-right" />
         </ThemeProvider>

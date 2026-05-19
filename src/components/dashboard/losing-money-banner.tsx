@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { AlertTriangle } from "lucide-react";
+import { TrendingDown } from "lucide-react";
 
 export function LosingMoneyBanner({
   hasLosingChannels,
@@ -9,16 +9,21 @@ export function LosingMoneyBanner({
   if (!hasLosingChannels) return null;
 
   return (
-    <div className="flex items-center gap-3 rounded-lg border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm">
-      <AlertTriangle className="h-4 w-4 shrink-0 text-amber-500" />
-      <p className="text-amber-200 flex-1">
-        Hay canales perdiendo dinero. Revisá las alertas para ver qué acciones tomar.
+    <div className="flex items-center gap-3 rounded-xl border border-rose-500/40 bg-rose-500/10 px-4 py-3.5 text-sm">
+      <div className="grid place-items-center h-9 w-9 rounded-lg bg-rose-500/20 shrink-0">
+        <TrendingDown className="h-5 w-5 text-rose-500" />
+      </div>
+      <p className="flex-1 text-rose-700 dark:text-rose-300 font-medium">
+        Hay canales perdiendo dinero.{" "}
+        <span className="font-normal opacity-80">
+          Revisá las alertas para ver qué acciones tomar.
+        </span>
       </p>
       <Link
         href="/dashboard/activity"
-        className="shrink-0 font-medium text-amber-400 underline-offset-2 hover:underline"
+        className="shrink-0 font-semibold text-rose-600 dark:text-rose-400 underline-offset-2 hover:underline"
       >
-        Ver alertas
+        Ver actividad →
       </Link>
     </div>
   );

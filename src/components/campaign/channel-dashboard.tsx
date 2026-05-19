@@ -7,7 +7,8 @@ import {
   Eye,
   Filter,
   MousePointerClick,
-  Target,
+  TrendingDown,
+  TrendingUp,
   Users,
   X,
   Zap,
@@ -37,10 +38,7 @@ import { NewCampaignButton } from "@/components/campaign/new-campaign-button";
 import { SyncButton } from "@/components/campaign/sync-button";
 import { SemaphoreBadge } from "@/components/health/semaphore-badge";
 import type { SemaphoreColor } from "@/lib/health";
-import { semaphoreClasses } from "@/lib/health";
-import { AlertsStrip } from "@/components/alerts/alerts-strip";
-import type { AlertEventLite } from "@/components/alerts/alert-item";
-import { LiveLeadsFeed } from "@/components/leads/live-leads-feed";
+import { PeriodChips } from "@/components/dashboard/period-chips";
 
 export type ChannelHealthLite = {
   score: number;
@@ -83,8 +81,7 @@ type Props = {
   snapshots: SerializedSnapshot[];
   integration: IntegrationInfo;
   health?: ChannelHealthLite;
-  alerts?: AlertEventLite[];
-  from: string; // YYYY-MM-DD — rango seleccionado por el usuario
+  from: string; // YYYY-MM-DD
   to: string;
 };
 
@@ -97,24 +94,36 @@ function fmtDate(iso: string, withYear: boolean) {
   });
 }
 
-export function ChannelDashboard({ channel, campaigns, snapshots, integration, health, alerts, from, to }: Props) {
+export function ChannelDashboard({
+  channel,
+  campaigns,
+  snapshots,
+  integration,
+  health,
+  from,
+  to,
+}: Props) {
   const meta = CHANNELS.find((c) => c.key === channel)!;
   const labels = getChannelLabels(channel);
   const isLive = integration?.status === "CONNECTED";
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const selectedCampaign = useMemo(
-    () => (selectedId ? campaigns.find((c) => c.id === selectedId) ?? null : null),
+    () =>
+      selectedId ? campaigns.find((c) => c.id === selectedId) ?? null : null,
     [selectedId, campaigns],
   );
 
-  // Snapshots filtrados por selección
+  // Snapshots filtrados por selección de campaña
   const visibleSnapshots = useMemo(
-    () => (selectedId ? snapshots.filter((s) => s.campaignId === selectedId) : snapshots),
+    () =>
+      selectedId
+        ? snapshots.filter((s) => s.campaignId === selectedId)
+        : snapshots,
     [snapshots, selectedId],
   );
 
-  // Totales del filtro
+  // Totales del filtro visible
   const totals = useMemo(
     () =>
       visibleSnapshots.reduce(
@@ -132,9 +141,7 @@ export function ChannelDashboard({ channel, campaigns, snapshots, integration, h
     [visibleSnapshots],
   );
 
-  // Totales del canal entero (sin filtro). Decide qué cards/charts mostrar
-  // de manera estable: si Email no tiene cost en NINGÚN snapshot, ocultamos
-  // la card "Inversión" siempre, no solo cuando filtrás.
+  // Totales del canal entero (sin filtro) — para decidir qué cards mostrar
   const allTotals = useMemo(
     () =>
       snapshots.reduce(
@@ -152,71 +159,67 @@ export function ChannelDashboard({ channel, campaigns, snapshots, integration, h
     [snapshots],
   );
 
-  // Qué KPIs mostrar — basado en allTotals (sino la grilla cambia al filtrar)
+  // Qué KPIs secundarios mostrar
   const showImpressions = allTotals.impressions > 0;
   const showClicks = allTotals.clicks > 0;
   const showLeads = allTotals.leads > 0;
-  const showCost = allTotals.cost > 0;
-  const showCostPerLead = allTotals.cost > 0 && allTotals.leads > 0;
 
   const useLeads = allTotals.leads > 0;
   const primaryKey = useLeads ? "leads" : "clicks";
-  const primaryLabel = useLeads ? labels.trendTitleLeads : labels.trendTitleClicks;
 
-  const clickRate = totals.impressions ? (totals.clicks / totals.impressions) * 100 : 0;
-  const costPerLead = totals.leads ? totals.cost / totals.leads : 0;
+  const clickRate = totals.impressions
+    ? (totals.clicks / totals.impressions) * 100
+    : 0;
 
-  // Rango de fechas visible
-  const dateRange = useMemo(() => {
-    if (!visibleSnapshots.length) return null;
-    const ts = visibleSnapshots.map((s) => new Date(s.date).getTime());
-    return {
-      min: new Date(Math.min(...ts)).toISOString(),
-      max: new Date(Math.max(...ts)).toISOString(),
-    };
-  }, [visibleSnapshots]);
   const rangeLabel = `${fmtDate(from, true)} → ${fmtDate(to, true)}`;
 
-  // Trend diario
-  const trend = useMemo(() => {
+  // Trend diario de costo y revenue (para el AreaTrend dual)
+  const dailyTrend = useMemo(() => {
     const byDay = new Map<
       string,
-      { leads: number; clicks: number; cost: number; impressions: number }
+      { cost: number; revenue: number; leads: number; clicks: number; impressions: number }
     >();
     visibleSnapshots.forEach((s) => {
-      const k = isLive ? s.date.slice(0, 10) : s.date.slice(5, 10);
-      const prev = byDay.get(k) ?? { leads: 0, clicks: 0, cost: 0, impressions: 0 };
+      const k = s.date.slice(0, 10);
+      const prev = byDay.get(k) ?? {
+        cost: 0,
+        revenue: 0,
+        leads: 0,
+        clicks: 0,
+        impressions: 0,
+      };
+      prev.cost += s.cost;
+      prev.revenue += s.revenue;
       prev.leads += s.leads;
       prev.clicks += s.clicks;
-      prev.cost += s.cost;
       prev.impressions += s.impressions;
       byDay.set(k, prev);
     });
     return Array.from(byDay.entries())
       .sort(([a], [b]) => a.localeCompare(b))
       .map(([date, v]) => ({ date, ...v }));
-  }, [visibleSnapshots, isLive]);
+  }, [visibleSnapshots]);
 
-  // Mejores campañas — siempre las del canal
-  const perCampaign = useMemo(() => {
+  // Campañas por ROI para BarBreakdown
+  const perCampaignRoi = useMemo(() => {
     return campaigns
       .map((c) => {
         const cs = snapshots.filter((s) => s.campaignId === c.id);
-        const leads = cs.reduce((a, b) => a + b.leads, 0);
-        const clicks = cs.reduce((a, b) => a + b.clicks, 0);
-        const value = useLeads ? leads : clicks;
+        const cost = cs.reduce((a, b) => a + b.cost, 0);
+        const revenue = cs.reduce((a, b) => a + b.revenue, 0);
+        const roi = cost > 0 ? revenue / cost : 0;
         return {
           campaignId: c.id,
           name: c.name.length > 28 ? c.name.slice(0, 26) + "…" : c.name,
           fullName: c.name,
-          value,
-          color: meta.hex,
+          value: roi,
+          color: roi >= 1 ? "#10b981" : "#ef4444",
         };
       })
-      .filter((x) => x.value > 0)
+      .filter((x) => x.value > 0 || snapshots.some((s) => s.campaignId === x.campaignId))
       .sort((a, b) => b.value - a.value)
       .slice(0, 10);
-  }, [campaigns, snapshots, useLeads, meta.hex]);
+  }, [campaigns, snapshots]);
 
   const tableRows = useMemo(() => {
     return campaigns
@@ -244,29 +247,38 @@ export function ChannelDashboard({ channel, campaigns, snapshots, integration, h
     setSelectedId((prev) => (prev === id ? null : id));
   };
 
+  // Investment KPI values (always from visibleSnapshots)
+  const profit = totals.revenue - totals.cost;
+  const roi = totals.cost > 0 ? totals.revenue / totals.cost : 0;
+
   return (
     <div className="space-y-8">
-      {/* Header */}
+      {/* Header — estilo home */}
       <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
         <div className="flex items-center gap-4">
-          <div className="grid place-items-center h-14 w-14 rounded-xl bg-muted shrink-0">
+          <div
+            className="grid place-items-center h-14 w-14 rounded-xl shrink-0"
+            style={{ backgroundColor: `${meta.hex}20` }}
+          >
             <ChannelIcon channel={channel} size={30} />
           </div>
           <div>
             <p className="text-xs uppercase tracking-widest text-muted-foreground">
-              {meta.tagline}
+              {channelLabel(channel)}
             </p>
             <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3 flex-wrap">
-              {channelLabel(channel)}
+              {meta.label}
               {health && (
-                <SemaphoreBadge color={health.color} label={health.label} score={health.score} size="md" />
+                <SemaphoreBadge
+                  color={health.color}
+                  label={health.label}
+                  score={health.score}
+                  size="md"
+                />
               )}
             </h1>
-            <p className="text-muted-foreground mt-1">
-              {campaigns.length} campañas · {activeCount} activas
-              {health?.roi !== undefined && health.roi !== null && (
-                <> · ROI <span className={semaphoreClasses(health.color).text + " font-semibold"}>{health.roi.toFixed(2)}x</span></>
-              )}
+            <p className="text-sm text-muted-foreground mt-1">
+              {meta.tagline} · {campaigns.length} campañas · {activeCount} activas
             </p>
           </div>
         </div>
@@ -286,45 +298,15 @@ export function ChannelDashboard({ channel, campaigns, snapshots, integration, h
               )}
             </Badge>
           )}
-          <Badge variant="outline">{rangeLabel}</Badge>
           {isLive && <SyncButton channel={channel} label="Actualizar" />}
           <NewCampaignButton channel={channel} />
         </div>
       </div>
 
-      {/* Health reasons (chips de razones del semáforo) */}
-      {health && health.reasons.length > 0 && (
-        <div className="flex flex-wrap gap-2">
-          {health.reasons.map((r, i) => (
-            <span
-              key={i}
-              className={`text-xs rounded-full border px-3 py-1 ${semaphoreClasses(health.color).bg} ${semaphoreClasses(health.color).text} ${semaphoreClasses(health.color).ring}`}
-            >
-              {r}
-            </span>
-          ))}
-        </div>
-      )}
+      {/* Period chips */}
+      <PeriodChips />
 
-      {/* Strip de alertas relevantes + feed de leads en vivo del canal */}
-      {(alerts && alerts.length > 0) && (
-        <div className="grid gap-6 lg:grid-cols-3">
-          <div className="lg:col-span-2">
-            <AlertsStrip channel={channel} initial={alerts} limit={4} />
-          </div>
-          <LiveLeadsFeed channel={channel} />
-        </div>
-      )}
-      {(!alerts || alerts.length === 0) && (
-        <div className="grid gap-6 lg:grid-cols-3">
-          <div className="lg:col-span-2">
-            <AlertsStrip channel={channel} initial={[]} limit={4} />
-          </div>
-          <LiveLeadsFeed channel={channel} />
-        </div>
-      )}
-
-      {/* Filter chip */}
+      {/* Filter chip de campaña seleccionada */}
       <AnimatePresence>
         {selectedCampaign && (
           <motion.div
@@ -350,64 +332,106 @@ export function ChannelDashboard({ channel, campaigns, snapshots, integration, h
         )}
       </AnimatePresence>
 
-      {/* KPI cards — solo se renderizan las que tienen datos en este canal */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-        {showImpressions && (
-          <KpiCard
-            label={labels.impressions}
-            value={formatNumber(totals.impressions)}
-            icon={<Eye className="h-4 w-4" />}
-            tooltip={labels.impressionsTooltip}
-          />
-        )}
-        {showClicks && (
-          <KpiCard
-            label={labels.clicks}
-            value={formatNumber(totals.clicks)}
-            icon={<MousePointerClick className="h-4 w-4" />}
-            tooltip={labels.clicksTooltip}
-          />
-        )}
-        {showLeads && (
-          <KpiCard
-            label={labels.leads}
-            value={formatNumber(totals.leads)}
-            icon={<Users className="h-4 w-4" />}
-            tooltip={labels.leadsTooltip}
-          />
-        )}
-        {showCost && (
-          <KpiCard
-            label={labels.cost}
-            value={totals.cost ? formatCurrency(totals.cost) : "—"}
-            icon={<DollarSign className="h-4 w-4" />}
-            tooltip={labels.costTooltip}
-          />
-        )}
-        {showCostPerLead && (
-          <KpiCard
-            label={labels.costPerLead}
-            value={costPerLead ? formatCurrency(costPerLead) : "—"}
-            icon={<Target className="h-4 w-4" />}
-            tooltip={labels.costPerLeadTooltip}
-          />
-        )}
+      {/* 4 KPI cards de inversión — protagonistas */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <KpiCard
+          label="Invertido"
+          value={totals.cost > 0 ? formatCurrency(totals.cost) : "—"}
+          hint={rangeLabel}
+          icon={<DollarSign className="h-4 w-4" />}
+          tooltip="Suma del costo de todas las campañas en el período."
+        />
+        <KpiCard
+          label="Retornado"
+          value={totals.revenue > 0 ? formatCurrency(totals.revenue) : "—"}
+          hint="Ingresos generados"
+          icon={<TrendingUp className="h-4 w-4" />}
+          tooltip="Suma del revenue de todas las campañas en el período."
+        />
+        <KpiCard
+          label="Ganancia"
+          value={
+            totals.cost > 0
+              ? `${profit >= 0 ? "+" : ""}${formatCurrency(profit)}`
+              : "—"
+          }
+          hint={profit >= 0 ? "Resultado positivo" : "Perdiendo dinero"}
+          icon={
+            profit >= 0 ? (
+              <TrendingUp className="h-4 w-4 text-emerald-500" />
+            ) : (
+              <TrendingDown className="h-4 w-4 text-rose-500" />
+            )
+          }
+          tooltip="Revenue menos Costo."
+        />
+        <KpiCard
+          label="Retorno por $1"
+          value={totals.cost > 0 ? `$${roi.toFixed(2)}` : "—"}
+          hint="Revenue / Costo"
+          icon={<DollarSign className="h-4 w-4" />}
+          tooltip="Cuánto ingreso generás por cada peso invertido. > $1 = ganancia."
+        />
       </div>
 
-      {/* Main charts */}
+      {/* KPI secundarios — solo si el canal tiene esas métricas */}
+      {(showImpressions || showClicks || showLeads) && (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {showImpressions && (
+            <KpiCard
+              label={labels.impressions}
+              value={formatNumber(totals.impressions)}
+              icon={<Eye className="h-4 w-4" />}
+              tooltip={labels.impressionsTooltip}
+            />
+          )}
+          {showClicks && (
+            <KpiCard
+              label={labels.clicks}
+              value={formatNumber(totals.clicks)}
+              icon={<MousePointerClick className="h-4 w-4" />}
+              tooltip={labels.clicksTooltip}
+            />
+          )}
+          {showLeads && (
+            <KpiCard
+              label={labels.leads}
+              value={formatNumber(totals.leads)}
+              icon={<Users className="h-4 w-4" />}
+              tooltip={labels.leadsTooltip}
+            />
+          )}
+          {showClicks && showImpressions && (
+            <KpiCard
+              label={
+                channel === "EMAIL_OUTREACH"
+                  ? "Tasa de apertura"
+                  : channel === "LINKEDIN_OUTREACH"
+                    ? "Tasa de visita"
+                    : "CTR"
+              }
+              value={`${clickRate.toFixed(2)}%`}
+              hint="Clicks / Impresiones"
+            />
+          )}
+        </div>
+      )}
+
+      {/* Gráficos principales */}
       <div className="grid gap-6 lg:grid-cols-3">
+        {/* AreaTrend dual: Retornado vs Invertido */}
         <Card className="lg:col-span-2">
           <CardHeader>
-            <CardTitle>{primaryLabel}</CardTitle>
+            <CardTitle>Retornado vs Invertido por día</CardTitle>
             <CardDescription>
               {selectedCampaign
                 ? `Campaña: ${selectedCampaign.name}`
-                : `Período ${rangeLabel} en ${channelLabel(channel)}`}
+                : `Período ${rangeLabel}`}
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {trend.length && (useLeads ? allTotals.leads : allTotals.clicks) > 0 ? (
-              <AreaTrend data={trend} dataKey={primaryKey} color={meta.hex} />
+            {dailyTrend.length > 0 ? (
+              <MultiAreaTrend data={dailyTrend} />
             ) : (
               <p className="text-sm text-muted-foreground py-12 text-center">
                 Sin datos en este período.
@@ -416,17 +440,18 @@ export function ChannelDashboard({ channel, campaigns, snapshots, integration, h
           </CardContent>
         </Card>
 
-        {perCampaign.length > 0 && (
+        {/* BarBreakdown por ROI de campaña */}
+        {perCampaignRoi.length > 0 && (
           <Card>
             <CardHeader>
-              <CardTitle>Mejores campañas</CardTitle>
+              <CardTitle>Campañas por ROI</CardTitle>
               <CardDescription>
-                Las que más {useLeads ? labels.primaryPlural : "clicks"} trajeron · click para filtrar
+                Verde ≥ $1 · rojo &lt; $1 · click para filtrar
               </CardDescription>
             </CardHeader>
             <CardContent>
               <BarBreakdown
-                data={perCampaign}
+                data={perCampaignRoi}
                 color={meta.hex}
                 onBarClick={handleBarClick}
                 highlightKey="campaignId"
@@ -437,35 +462,37 @@ export function ChannelDashboard({ channel, campaigns, snapshots, integration, h
         )}
       </div>
 
-      {/* Inversión por día — solo si hay costo en el canal */}
-      {showCost && (
+      {/* Trend secundario de la métrica principal del canal (leads / clicks) */}
+      {(useLeads ? allTotals.leads : allTotals.clicks) > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle>{labels.costChartTitle}</CardTitle>
+            <CardTitle>
+              {useLeads ? labels.trendTitleLeads : labels.trendTitleClicks}
+            </CardTitle>
             <CardDescription>
               {selectedCampaign
-                ? `Costo diario de ${selectedCampaign.name}`
-                : `Costo diario en ${channelLabel(channel)}`}
+                ? `Campaña: ${selectedCampaign.name}`
+                : `Evolución diaria · ${rangeLabel}`}
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {trend.length && totals.cost > 0 ? (
-              <AreaTrend data={trend} dataKey="cost" color="#374151" />
-            ) : (
-              <p className="text-sm text-muted-foreground py-12 text-center">
-                Sin costo registrado en este período.
-              </p>
-            )}
+            <AreaTrend
+              data={dailyTrend}
+              dataKey={primaryKey}
+              color={meta.hex}
+            />
           </CardContent>
         </Card>
       )}
 
-      {/* Tabla */}
+      {/* Tabla de campañas */}
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle>{selectedCampaign ? "Campaña filtrada" : "Campañas"}</CardTitle>
+              <CardTitle>
+                {selectedCampaign ? "Campaña filtrada" : "Campañas"}
+              </CardTitle>
               <CardDescription>
                 {selectedCampaign
                   ? "Limpiá el filtro arriba para ver todas"
@@ -478,18 +505,75 @@ export function ChannelDashboard({ channel, campaigns, snapshots, integration, h
           <CampaignTable campaigns={tableRows} />
         </CardContent>
       </Card>
-
-      {totals.impressions > 0 && totals.clicks > 0 && (
-        <p className="text-xs text-muted-foreground">
-          {channel === "EMAIL_OUTREACH"
-            ? "Tasa de apertura"
-            : channel === "LINKEDIN_OUTREACH"
-              ? "Tasa de visita"
-              : "Tasa de clicks"}{" "}
-          {selectedCampaign ? "de la campaña" : "del período"}:{" "}
-          <span className="font-medium">{clickRate.toFixed(2)}%</span>
-        </p>
-      )}
     </div>
+  );
+}
+
+// ─── Inline dual-area chart (revenue vs cost) ────────────────────────────────
+// Wrapper liviano para no crear un archivo extra — reutiliza recharts directamente.
+
+import {
+  ResponsiveContainer,
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  Tooltip as RechartsTooltip,
+  CartesianGrid,
+  Legend,
+} from "recharts";
+
+function MultiAreaTrend({
+  data,
+}: {
+  data: { date: string; cost: number; revenue: number }[];
+}) {
+  return (
+    <ResponsiveContainer width="100%" height={260}>
+      <AreaChart data={data} margin={{ top: 10, right: 10, left: -18, bottom: 0 }}>
+        <defs>
+          <linearGradient id="grad-revenue" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#10b981" stopOpacity={0.45} />
+            <stop offset="100%" stopColor="#10b981" stopOpacity={0} />
+          </linearGradient>
+          <linearGradient id="grad-cost" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#ef4444" stopOpacity={0.35} />
+            <stop offset="100%" stopColor="#ef4444" stopOpacity={0} />
+          </linearGradient>
+        </defs>
+        <CartesianGrid strokeDasharray="3 3" vertical={false} />
+        <XAxis dataKey="date" tickLine={false} axisLine={false} minTickGap={24} />
+        <YAxis tickLine={false} axisLine={false} width={60} />
+        <RechartsTooltip
+          formatter={(v: number, name: string) => [
+            new Intl.NumberFormat("es-AR", {
+              style: "currency",
+              currency: "USD",
+              maximumFractionDigits: 0,
+            }).format(v),
+            name === "revenue" ? "Retornado" : "Invertido",
+          ]}
+        />
+        <Legend
+          formatter={(val) => (val === "revenue" ? "Retornado" : "Invertido")}
+        />
+        <Area
+          type="monotone"
+          dataKey="revenue"
+          stroke="#10b981"
+          strokeWidth={2}
+          fill="url(#grad-revenue)"
+          activeDot={{ r: 5 }}
+        />
+        <Area
+          type="monotone"
+          dataKey="cost"
+          stroke="#ef4444"
+          strokeWidth={2}
+          fill="url(#grad-cost)"
+          activeDot={{ r: 5 }}
+        />
+      </AreaChart>
+    </ResponsiveContainer>
   );
 }

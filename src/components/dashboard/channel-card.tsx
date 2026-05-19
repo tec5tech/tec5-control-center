@@ -33,6 +33,7 @@ function TrendBadge({ trend }: { trend: ChannelMetrics["trend"] }) {
 
 export function ChannelCard({ metrics }: { metrics: ChannelMetrics }) {
   const profitPositive = metrics.profit >= 0;
+  const hasData = metrics.invested > 0 || metrics.returned > 0;
 
   return (
     <Card className="flex flex-col">
@@ -55,51 +56,57 @@ export function ChannelCard({ metrics }: { metrics: ChannelMetrics }) {
       </CardHeader>
 
       <CardContent className="flex-1 flex flex-col gap-4">
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <p className="text-[10px] uppercase tracking-widest text-muted-foreground">
-              Invertido
-            </p>
-            <p className="text-base font-semibold tabular-nums">
-              {metrics.invested > 0 ? formatCurrency(metrics.invested) : "—"}
-            </p>
+        {!hasData ? (
+          <p className="text-xs text-muted-foreground py-2 text-center">
+            Sin datos en el período
+          </p>
+        ) : (
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <p className="text-[10px] uppercase tracking-widest text-muted-foreground">
+                Invertido
+              </p>
+              <p className="text-base font-semibold tabular-nums">
+                {metrics.invested > 0 ? formatCurrency(metrics.invested) : "—"}
+              </p>
+            </div>
+            <div>
+              <p className="text-[10px] uppercase tracking-widest text-muted-foreground">
+                Retornado
+              </p>
+              <p className="text-base font-semibold tabular-nums">
+                {metrics.returned > 0 ? formatCurrency(metrics.returned) : "—"}
+              </p>
+            </div>
+            <div>
+              <p className="text-[10px] uppercase tracking-widest text-muted-foreground">
+                Ganancia
+              </p>
+              <p
+                className={cn(
+                  "text-base font-semibold tabular-nums",
+                  metrics.invested > 0
+                    ? profitPositive
+                      ? "text-emerald-500"
+                      : "text-rose-500"
+                    : "text-muted-foreground",
+                )}
+              >
+                {metrics.invested > 0
+                  ? `${profitPositive ? "+" : ""}${formatCurrency(metrics.profit)}`
+                  : "—"}
+              </p>
+            </div>
+            <div>
+              <p className="text-[10px] uppercase tracking-widest text-muted-foreground">
+                Retorno por $1
+              </p>
+              <p className="text-base font-semibold tabular-nums">
+                {metrics.invested > 0 ? `$${metrics.roi.toFixed(2)}` : "—"}
+              </p>
+            </div>
           </div>
-          <div>
-            <p className="text-[10px] uppercase tracking-widest text-muted-foreground">
-              Retornado
-            </p>
-            <p className="text-base font-semibold tabular-nums">
-              {metrics.returned > 0 ? formatCurrency(metrics.returned) : "—"}
-            </p>
-          </div>
-          <div>
-            <p className="text-[10px] uppercase tracking-widest text-muted-foreground">
-              Ganancia
-            </p>
-            <p
-              className={cn(
-                "text-base font-semibold tabular-nums",
-                metrics.invested > 0
-                  ? profitPositive
-                    ? "text-emerald-500"
-                    : "text-rose-500"
-                  : "text-muted-foreground",
-              )}
-            >
-              {metrics.invested > 0
-                ? `${profitPositive ? "+" : ""}${formatCurrency(metrics.profit)}`
-                : "—"}
-            </p>
-          </div>
-          <div>
-            <p className="text-[10px] uppercase tracking-widest text-muted-foreground">
-              Retorno por $1
-            </p>
-            <p className="text-base font-semibold tabular-nums">
-              {metrics.invested > 0 ? `$${metrics.roi.toFixed(2)}` : "—"}
-            </p>
-          </div>
-        </div>
+        )}
 
         <Link
           href={`/dashboard/${metrics.slug}`}
