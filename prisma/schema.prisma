@@ -24,8 +24,9 @@ model User {
   emailVerified DateTime?
   image         String?
   passwordHash  String?
-  role          String    @default("VIEWER")
-  createdAt     DateTime  @default(now())
+  role            String    @default("VIEWER")
+  preferencesJson String    @default("{}")
+  createdAt       DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
   accounts            Account[]

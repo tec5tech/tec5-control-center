@@ -6,6 +6,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { cn } from "@/lib/utils";
 
 export function KpiCard({
   label,
@@ -13,15 +14,17 @@ export function KpiCard({
   hint,
   icon,
   tooltip,
+  valueClassName,
 }: {
   label: string;
   value: string | number;
   hint?: string;
   icon?: React.ReactNode;
   tooltip?: string;
+  valueClassName?: string;
 }) {
   return (
-    <Card className="p-4">
+    <Card className="p-5 rounded-xl shadow-sm">
       <div className="flex items-start justify-between gap-2">
         <div className="space-y-1 min-w-0 flex-1">
           <div className="flex items-center gap-1">
@@ -40,7 +43,7 @@ export function KpiCard({
                       <Info className="h-3 w-3" />
                     </button>
                   </TooltipTrigger>
-                  <TooltipContent side="top" align="start">
+                  <TooltipContent side="top" align="start" className="max-w-[220px] leading-snug">
                     <p className="font-medium mb-1">¿Cómo se calcula?</p>
                     <p className="text-muted-foreground leading-relaxed">{tooltip}</p>
                   </TooltipContent>
@@ -48,7 +51,9 @@ export function KpiCard({
               </TooltipProvider>
             )}
           </div>
-          <p className="text-2xl font-semibold tabular-nums">{value}</p>
+          <p className={cn("text-2xl font-semibold tabular-nums", valueClassName)}>
+            {value}
+          </p>
           {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
         </div>
         {icon && (

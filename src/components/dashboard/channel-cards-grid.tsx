@@ -5,8 +5,10 @@ export function ChannelCardsGrid({ perChannel }: { perChannel: ChannelMetrics[] 
   return (
     <section>
       <div className="mb-4">
-        <p className="text-xs uppercase tracking-widest text-muted-foreground">Por canal</p>
-        <h2 className="text-xl font-bold tracking-tight">Detalle por canal</h2>
+        <h2 className="text-xl font-bold tracking-tight">Detalle por Canal</h2>
+        <p className="text-sm text-muted-foreground mt-0.5">
+          Mirá cómo está rindiendo cada canal individualmente
+        </p>
       </div>
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {perChannel.map((metrics) => (
