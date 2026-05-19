@@ -10,16 +10,32 @@ type UserWithPrefs = {
   preferencesJson: string;
 };
 
+type SystemSettingsRow = {
+  lossRoiThreshold: number;
+  lowPerformanceRoiThreshold: number;
+  excellentRoiThreshold: number;
+  timezone: string;
+  currency: string;
+};
+
+const DEFAULT_SYSTEM_SETTINGS: SystemSettingsRow = {
+  lossRoiThreshold: 1.0,
+  lowPerformanceRoiThreshold: 2.0,
+  excellentRoiThreshold: 3.0,
+  timezone: "America/Buenos_Aires",
+  currency: "ARS",
+};
+
 export default async function SettingsPage() {
   const session = await auth();
   if (!session?.user) redirect("/login");
 
-  // Intentamos leer preferencesJson; si la columna no existe todavía (db:push pendiente),
-  // caemos a defaults sin romper la página.
   let email = session.user.email ?? "";
   let prefs: Record<string, boolean> = {};
   let schemaPending = false;
+  let systemSettings: SystemSettingsRow = { ...DEFAULT_SYSTEM_SETTINGS };
 
+  // ─── User prefs ───────────────────────────────────────────────────────────
   try {
     const user = await (
       prisma.user as unknown as {
@@ -43,10 +59,28 @@ export default async function SettingsPage() {
     if (fallback?.email) email = fallback.email;
   }
 
+  // ─── System settings ──────────────────────────────────────────────────────
+  try {
+    const db = prisma as unknown as {
+      systemSettings: {
+        upsert: (args: unknown) => Promise<SystemSettingsRow>;
+      };
+    };
+    systemSettings = await db.systemSettings.upsert({
+      where: { id: "default" },
+      update: {},
+      create: { id: "default", ...DEFAULT_SYSTEM_SETTINGS },
+    });
+  } catch (e) {
+    console.warn("[settings] SystemSettings table not available — using defaults", e);
+    // schemaPending is already set or will be set; keep defaults
+  }
+
   return (
     <SettingsClient
       email={email}
       preferences={prefs}
+      systemSettings={systemSettings}
       schemaPending={schemaPending}
     />
   );

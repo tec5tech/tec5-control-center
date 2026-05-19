@@ -236,3 +236,15 @@ model TelegramSubscriber {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
+
+// Configuración global del sistema — singleton (id="default")
+model SystemSettings {
+  id                         String   @id @default("default")
+  lossRoiThreshold           Float    @default(1.0)
+  lowPerformanceRoiThreshold Float    @default(2.0)
+  excellentRoiThreshold      Float    @default(3.0)
+  timezone                   String   @default("America/Buenos_Aires")
+  currency                   String   @default("ARS")
+  createdAt                  DateTime @default(now())
+  updatedAt                  DateTime @updatedAt
+}

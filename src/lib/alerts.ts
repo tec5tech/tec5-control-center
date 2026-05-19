@@ -266,6 +266,82 @@ async function evaluateActions() {
   }
 }
 
+// 5) ROI thresholds por canal (lee SystemSettings singleton)
+async function evaluateRoiThresholds() {
+  type SystemSettingsRow = {
+    lossRoiThreshold: number;
+    lowPerformanceRoiThreshold: number;
+    excellentRoiThreshold: number;
+  };
+
+  let thresholds: SystemSettingsRow = {
+    lossRoiThreshold: 1.0,
+    lowPerformanceRoiThreshold: 2.0,
+    excellentRoiThreshold: 3.0,
+  };
+
+  try {
+    const db = prisma as unknown as {
+      systemSettings: { findUnique: (args: unknown) => Promise<SystemSettingsRow | null> };
+    };
+    const row = await db.systemSettings.findUnique({ where: { id: "default" } });
+    if (row) thresholds = row;
+  } catch {
+    // SystemSettings table may not exist yet — use defaults
+  }
+
+  const since = new Date(Date.now() - 7 * 24 * 3600 * 1000);
+
+  for (const ch of CHANNELS) {
+    const snapshots = await prisma.metricSnapshot.findMany({
+      where: { date: { gte: since }, campaign: { channel: ch.key } },
+    });
+    if (snapshots.length === 0) continue;
+
+    const totalCost = snapshots.reduce((a, s) => a + s.cost, 0);
+    const totalRevenue = snapshots.reduce((a, s) => a + s.revenue, 0);
+
+    if (totalCost <= 0) continue;
+
+    const roi = totalRevenue / totalCost;
+
+    if (roi < thresholds.lossRoiThreshold) {
+      await emit({
+        type: "ACTION_NEEDED",
+        severity: "CRITICAL",
+        channel: ch.key as Channel,
+        campaignId: null,
+        title: `Canal perdiendo dinero · ${ch.label}`,
+        message: `El ROI de ${ch.label} en los últimos 7 días es ${roi.toFixed(2)}x, por debajo del umbral de pérdida (${thresholds.lossRoiThreshold}x). Revisá las campañas activas.`,
+        payload: { roi, threshold: thresholds.lossRoiThreshold, type: "loss" },
+        cooldownHours: 24,
+      });
+    } else if (roi < thresholds.lowPerformanceRoiThreshold) {
+      await emit({
+        type: "ACTION_NEEDED",
+        severity: "WARN",
+        channel: ch.key as Channel,
+        campaignId: null,
+        title: `Rendimiento bajo · ${ch.label}`,
+        message: `El ROI de ${ch.label} en los últimos 7 días es ${roi.toFixed(2)}x, por debajo del umbral de bajo rendimiento (${thresholds.lowPerformanceRoiThreshold}x). Podría mejorar.`,
+        payload: { roi, threshold: thresholds.lowPerformanceRoiThreshold, type: "low_performance" },
+        cooldownHours: 24,
+      });
+    } else if (roi > thresholds.excellentRoiThreshold) {
+      await emit({
+        type: "TOP_CAMPAIGN",
+        severity: "OK",
+        channel: ch.key as Channel,
+        campaignId: null,
+        title: `Excelente rendimiento · ${ch.label}`,
+        message: `El ROI de ${ch.label} en los últimos 7 días es ${roi.toFixed(2)}x, por encima del umbral de excelencia (${thresholds.excellentRoiThreshold}x). Considerá subirle el presupuesto.`,
+        payload: { roi, threshold: thresholds.excellentRoiThreshold, type: "excellent" },
+        cooldownHours: 24,
+      });
+    }
+  }
+}
+
 // === Punto de entrada ======================================================
 
 export async function evaluateAlerts() {
@@ -273,6 +349,7 @@ export async function evaluateAlerts() {
   await evaluateNewLeads();
   await evaluateTopCampaigns();
   await evaluateActions();
+  await evaluateRoiThresholds();
 }
 
 // === Telegram fanout =======================================================
@@ -293,6 +370,21 @@ async function sendTelegramFanout(eventId: string) {
 
   for (const sub of subs) {
     if (!sub.chatId) continue;
+
+    // Telegram toggle: verificar preferencia del usuario
+    try {
+      const subUser = await prisma.user.findUnique({
+        where: { id: sub.userId },
+        select: { preferencesJson: true } as unknown as Record<string, unknown>,
+      }) as { preferencesJson?: string } | null;
+      if (subUser) {
+        let userPrefs: Record<string, unknown> = {};
+        try { userPrefs = JSON.parse((subUser as { preferencesJson?: string }).preferencesJson ?? "{}"); } catch {}
+        if (userPrefs.telegramNotifications === false) continue;
+      }
+    } catch {
+      // Si no podemos leer prefs, enviamos igual (fail-open)
+    }
 
     // Filtros del suscriptor (canal y tipo)
     let channels: string[] = [];
