@@ -288,8 +288,8 @@ async function sendTelegramFanout(eventId: string) {
     where: { enabled: true, chatId: { not: null } },
   });
 
-  // Render del mensaje
-  const text = renderTelegramMessage(event);
+  // Render del mensaje enriquecido
+  const { text, replyMarkup } = renderTelegramMessage(event);
 
   for (const sub of subs) {
     if (!sub.chatId) continue;
@@ -311,6 +311,7 @@ async function sendTelegramFanout(eventId: string) {
           text,
           parse_mode: "HTML",
           disable_web_page_preview: true,
+          reply_markup: replyMarkup,
         }),
       });
     } catch (e) {
@@ -347,12 +348,128 @@ function escapeHtml(s: string) {
   );
 }
 
-function renderTelegramMessage(e: { type: string; severity: string; title: string; message: string; channel: string | null }) {
+type AlertEventPartial = {
+  type: string;
+  severity: string;
+  title: string;
+  message: string;
+  channel: string | null;
+  campaignId: string | null;
+  payloadJson: string | null;
+};
+
+const typeRecommendation: Record<AlertType, string> = {
+  BUDGET_OVERRUN: "→ Pausá la campaña o subí el presupuesto",
+  BUDGET_LEFTOVER: "→ Reasigná el saldo a la campaña que mejor rinde",
+  BUDGET_PACE: "→ El budget va a vencer pronto — chequeá pacing",
+  NEW_LEAD: "→ Hacé seguimiento al lead",
+  TOP_CAMPAIGN: "→ Considerá subirle el presupuesto",
+  ACTION_NEEDED: "→ Acción requerida — revisá la campaña/KPI",
+  CAMPAIGN_PAUSED: "→ Revisá por qué se pausó",
+};
+
+function buildKeyData(payload: Record<string, unknown>): string[] {
+  const lines: string[] = [];
+
+  if (typeof payload.spend === "number" && typeof payload.budget === "number") {
+    const pct = payload.budget > 0 ? ((payload.spend / payload.budget) * 100).toFixed(0) : "0";
+    lines.push(`💸 Gastado: ${fmtMoney(payload.spend)} / ${fmtMoney(payload.budget)} (${pct}%)`);
+  }
+
+  if (typeof payload.leads === "number") {
+    lines.push(`🎯 Leads: ${fmtNum(payload.leads)}`);
+  }
+
+  if (typeof payload.roi === "number") {
+    lines.push(`📈 ROI: $${payload.roi.toFixed(2)} por cada $1`);
+  }
+
+  if (typeof payload.cost7d === "number" && typeof payload.leads7d === "number") {
+    lines.push(`📊 7 días: ${fmtMoney(payload.cost7d)} gastado · ${fmtNum(payload.leads7d)} leads`);
+  }
+
+  if (typeof payload.leftover === "number") {
+    lines.push(`💰 Sin usar: ${fmtMoney(payload.leftover)}`);
+  }
+
+  if (
+    typeof payload.pct === "number" &&
+    typeof payload.current === "number" &&
+    typeof payload.target === "number"
+  ) {
+    lines.push(
+      `📉 Progreso KPI: ${payload.pct.toFixed(0)}% (${fmtNum(payload.current)} / ${fmtNum(payload.target)})`,
+    );
+  }
+
+  return lines;
+}
+
+function renderTelegramMessage(e: AlertEventPartial): { text: string; replyMarkup: object } {
   const sev = (e.severity as AlertSeverity) ?? "INFO";
   const t = (e.type as AlertType) ?? "ACTION_NEEDED";
+
+  // 1. Header
   const head = `${typeEmoji[t] ?? "📣"} ${severityEmoji[sev] ?? ""} <b>${escapeHtml(e.title)}</b>`;
-  const channelTxt = e.channel ? `\n<i>${escapeHtml(channelLabel(e.channel as Channel))}</i>` : "";
-  return `${head}${channelTxt}\n\n${escapeHtml(e.message)}\n\n<i>Tec5.Tech · Control Center</i>`;
+
+  // 2. Context line: channel label + campaign hint
+  const chLabel = e.channel ? channelLabel(e.channel as Channel) : null;
+  const contextParts: string[] = [];
+  if (chLabel) contextParts.push(escapeHtml(chLabel));
+  // No campaignId label available without extra query — skip campaign name here (already in message)
+  const contextLine = contextParts.length > 0 ? `<i>${contextParts.join(" · ")}</i>` : "";
+
+  // 3. Main message
+  const mainMsg = escapeHtml(e.message);
+
+  // 4. Key data block
+  let keyDataBlock = "";
+  if (e.payloadJson) {
+    try {
+      const payload = JSON.parse(e.payloadJson) as Record<string, unknown>;
+      const lines = buildKeyData(payload);
+      if (lines.length > 0) {
+        keyDataBlock = `\n\n📊 <b>Datos clave</b>\n${lines.join("\n")}`;
+      }
+    } catch {
+      // ignore malformed JSON
+    }
+  }
+
+  // 5. Recommendation
+  const rec = typeRecommendation[t] ?? "→ Revisá el portal para más detalles";
+  const recBlock = `\n\n💡 <b>Recomendación</b>\n${rec}`;
+
+  // 6. Dashboard URL
+  const baseUrl =
+    process.env.AUTH_URL?.replace(/\/$/, "") ?? "https://controlcenter.tec5.ar";
+  const channelSlug = e.channel
+    ? (CHANNELS.find((c) => c.key === e.channel)?.slug ?? null)
+    : null;
+  const dashboardUrl = channelSlug
+    ? `${baseUrl}/dashboard/${channelSlug}`
+    : `${baseUrl}/dashboard`;
+
+  // 7. Footer
+  const footer = `<i>Tec5.Tech · Control Center</i>`;
+
+  const parts: string[] = [head];
+  if (contextLine) parts.push(contextLine);
+  parts.push(""); // blank line before message
+  parts.push(mainMsg);
+
+  const text =
+    parts.join("\n") +
+    keyDataBlock +
+    recBlock +
+    "\n\n" +
+    footer;
+
+  const replyMarkup = {
+    inline_keyboard: [[{ text: "🔗 Abrir en el portal", url: dashboardUrl }]],
+  };
+
+  return { text, replyMarkup };
 }
 
 // Helper público: reenviar un evento manualmente (botón "test").

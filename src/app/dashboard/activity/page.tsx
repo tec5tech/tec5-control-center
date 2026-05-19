@@ -10,6 +10,8 @@ import {
 import { MetricInfo } from "@/components/ui/metric-info";
 import { ActivityFilters } from "@/components/activity/activity-filters";
 import { formatCurrency } from "@/lib/utils";
+import { parseDateRange } from "@/lib/date-range";
+import { PeriodSelect } from "@/components/dashboard/period-select";
 
 export const dynamic = "force-dynamic";
 
@@ -34,15 +36,29 @@ function payloadLoss(payloadJson: string | null): number | null {
 export default async function ActivityPage({
   searchParams,
 }: {
-  searchParams: Promise<{ severity?: string }>;
+  searchParams: Promise<{ severity?: string; from?: string; to?: string }>;
 }) {
   const session = await auth();
   if (!session?.user) redirect("/login");
 
-  const { severity: severityParam } = await searchParams;
+  const params = await searchParams;
+  const { severity: severityParam } = params;
   const activeFilter = (severityParam ?? "all") as "all" | "critical" | "warn" | "ok";
+  const { from, to } = parseDateRange(params);
+
+  // Helper: build /dashboard/activity href preserving date params
+  function activityHref(severity: string | null): string {
+    const base = "/dashboard/activity";
+    const qs = new URLSearchParams();
+    if (severity) qs.set("severity", severity);
+    if (params.from) qs.set("from", params.from);
+    if (params.to) qs.set("to", params.to);
+    const q = qs.toString();
+    return q ? `${base}?${q}` : base;
+  }
 
   const alerts = await prisma.alertEvent.findMany({
+    where: { createdAt: { gte: from, lte: to } },
     orderBy: { createdAt: "desc" },
     take: 200,
   });
@@ -66,17 +82,20 @@ export default async function ActivityPage({
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Alertas y Recomendaciones</h1>
-        <p className="text-muted-foreground mt-1">
-          Acciones importantes para optimizar tu inversión
-        </p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Alertas y Recomendaciones</h1>
+          <p className="text-muted-foreground mt-1">
+            Acciones importantes para optimizar tu inversión
+          </p>
+        </div>
+        <PeriodSelect />
       </div>
 
       {/* Summary cards — clickeables actúan como filtros */}
       <div className="grid gap-4 sm:grid-cols-3">
         <Link
-          href={activeFilter === "critical" ? "/dashboard/activity" : "/dashboard/activity?severity=critical"}
+          href={activeFilter === "critical" ? activityHref(null) : activityHref("critical")}
           className={`flex items-center gap-4 rounded-xl border bg-rose-50 px-5 py-4 transition hover:shadow-sm ${
             activeFilter === "critical" ? "border-rose-400 ring-2 ring-rose-200" : "border-rose-200"
           }`}
@@ -90,7 +109,7 @@ export default async function ActivityPage({
           </div>
         </Link>
         <Link
-          href={activeFilter === "warn" ? "/dashboard/activity" : "/dashboard/activity?severity=warn"}
+          href={activeFilter === "warn" ? activityHref(null) : activityHref("warn")}
           className={`flex items-center gap-4 rounded-xl border bg-amber-50 px-5 py-4 transition hover:shadow-sm ${
             activeFilter === "warn" ? "border-amber-400 ring-2 ring-amber-200" : "border-amber-200"
           }`}
@@ -104,7 +123,7 @@ export default async function ActivityPage({
           </div>
         </Link>
         <Link
-          href={activeFilter === "ok" ? "/dashboard/activity" : "/dashboard/activity?severity=ok"}
+          href={activeFilter === "ok" ? activityHref(null) : activityHref("ok")}
           className={`flex items-center gap-4 rounded-xl border bg-emerald-50 px-5 py-4 transition hover:shadow-sm ${
             activeFilter === "ok" ? "border-emerald-400 ring-2 ring-emerald-200" : "border-emerald-200"
           }`}
