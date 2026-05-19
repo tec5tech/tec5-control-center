@@ -9,6 +9,7 @@ import {
   Activity,
   Gauge,
   Plug,
+  Bell,
 } from "lucide-react";
 import type { Role, Channel } from "@/types/db";
 import { cn } from "@/lib/utils";
@@ -27,6 +28,7 @@ const primary: NavItem[] = [
   { label: "Resumen", href: "/dashboard", icon: LayoutDashboard },
   { label: "KPIs", href: "/dashboard/kpis", icon: Gauge },
   { label: "Campañas", href: "/dashboard/campaigns", icon: Target },
+  { label: "Alertas", href: "/dashboard/activity", icon: Bell },
 ];
 
 const channels: NavItem[] = [
@@ -42,12 +44,18 @@ const channels: NavItem[] = [
 ];
 
 const secondary: NavItem[] = [
-  { label: "Integraciones", href: "/dashboard/integrations", icon: Plug, roles: ["ADMIN", "MANAGER"] },
+  { label: "Conexiones", href: "/dashboard/integrations", icon: Plug, roles: ["ADMIN", "MANAGER"] },
   { label: "Actividad", href: "/dashboard/activity", icon: Activity, roles: ["ADMIN", "MANAGER"] },
   { label: "Ajustes", href: "/dashboard/settings", icon: Settings, roles: ["ADMIN"] },
 ];
 
-export function Sidebar({ role }: { role: Role }) {
+export function Sidebar({
+  role,
+  unreadAlerts = 0,
+}: {
+  role: Role;
+  unreadAlerts?: number;
+}) {
   const pathname = usePathname();
 
   const canSee = (item: NavItem) => !item.roles || item.roles.includes(role);
@@ -58,6 +66,7 @@ export function Sidebar({ role }: { role: Role }) {
         ? pathname === "/dashboard"
         : pathname.startsWith(item.href);
     const Icon = item.icon;
+    const showBadge = item.href === "/dashboard/activity" && unreadAlerts > 0;
     return (
       <Link
         key={item.href}
@@ -76,7 +85,12 @@ export function Sidebar({ role }: { role: Role }) {
             <Icon className="h-4 w-4" />
           )}
         </span>
-        <span>{item.label}</span>
+        <span className="flex-1">{item.label}</span>
+        {showBadge && (
+          <span className="ml-auto grid place-items-center h-4 min-w-4 rounded-full bg-primary px-1 text-[10px] font-semibold text-primary-foreground tabular-nums">
+            {unreadAlerts > 99 ? "99+" : unreadAlerts}
+          </span>
+        )}
       </Link>
     );
   };
