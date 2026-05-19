@@ -3,7 +3,7 @@ import { TrendingUp, TrendingDown, Minus, ArrowRight } from "lucide-react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { ChannelIcon } from "@/components/brand/channel-icon";
 import { MetricInfo } from "@/components/ui/metric-info";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, formatNumber } from "@/lib/utils";
 import type { ChannelMetrics } from "@/lib/dashboard-metrics";
 import { cn } from "@/lib/utils";
 
@@ -34,35 +34,72 @@ function TrendBadge({ trend }: { trend: ChannelMetrics["trend"] }) {
 
 export function ChannelCard({ metrics }: { metrics: ChannelMetrics }) {
   const profitPositive = metrics.profit >= 0;
-  const hasData = metrics.invested > 0 || metrics.returned > 0;
   const roiPositive = metrics.roi >= 1;
 
-  const roiBlock = hasData ? (
-    <div
-      className={cn(
-        "rounded-lg px-4 py-3 border",
-        roiPositive
-          ? "bg-emerald-50 border-emerald-200"
-          : "bg-rose-50 border-rose-200",
-      )}
-    >
-      <p
+  // Tres modos según la data disponible:
+  //   1) hasInvestment → cards de inversión + bloque ROI grande
+  //   2) hasEngagement (sin inversión) → cards de engagement + bloque "engagement"
+  //   3) sin nada → "Sin datos en el período"
+  const mode: "investment" | "engagement" | "empty" = metrics.hasInvestment
+    ? "investment"
+    : metrics.hasEngagement
+      ? "engagement"
+      : "empty";
+
+  const engagementPrimary =
+    metrics.leads > 0 ? "leads" : metrics.clicks > 0 ? "clicks" : "impressions";
+
+  const engagementLabel =
+    engagementPrimary === "leads"
+      ? "Leads"
+      : engagementPrimary === "clicks"
+        ? "Clicks / Aperturas"
+        : "Impresiones";
+
+  const engagementValue =
+    engagementPrimary === "leads"
+      ? metrics.leads
+      : engagementPrimary === "clicks"
+        ? metrics.clicks
+        : metrics.impressions;
+
+  const roiBlock =
+    mode === "investment" ? (
+      <div
         className={cn(
-          "text-3xl font-bold tabular-nums",
-          roiPositive ? "text-emerald-600" : "text-rose-600",
+          "rounded-lg px-4 py-3 border",
+          roiPositive
+            ? "bg-emerald-50 border-emerald-200"
+            : "bg-rose-50 border-rose-200",
         )}
       >
-        ${metrics.roi.toFixed(2)}
-      </p>
-      <p className="text-xs text-muted-foreground mt-0.5">
-        por cada $1 invertido
-      </p>
-    </div>
-  ) : (
-    <div className="rounded-lg px-4 py-3 border border-border bg-muted/20">
-      <p className="text-sm text-muted-foreground">Sin datos en el período</p>
-    </div>
-  );
+        <p
+          className={cn(
+            "text-3xl font-bold tabular-nums",
+            roiPositive ? "text-emerald-600" : "text-rose-600",
+          )}
+        >
+          ${metrics.roi.toFixed(2)}
+        </p>
+        <p className="text-xs text-muted-foreground mt-0.5">por cada $1 invertido</p>
+      </div>
+    ) : mode === "engagement" ? (
+      <div
+        className="rounded-lg px-4 py-3 border"
+        style={{ backgroundColor: `${metrics.hex}10`, borderColor: `${metrics.hex}30` }}
+      >
+        <p className="text-3xl font-bold tabular-nums" style={{ color: metrics.hex }}>
+          {formatNumber(engagementValue)}
+        </p>
+        <p className="text-xs text-muted-foreground mt-0.5">
+          {engagementLabel.toLowerCase()} · canal orgánico
+        </p>
+      </div>
+    ) : (
+      <div className="rounded-lg px-4 py-3 border border-border bg-muted/20">
+        <p className="text-sm text-muted-foreground">Sin datos en el período</p>
+      </div>
+    );
 
   return (
     <Card className="flex flex-col rounded-xl">
@@ -85,49 +122,81 @@ export function ChannelCard({ metrics }: { metrics: ChannelMetrics }) {
       </CardHeader>
 
       <CardContent className="flex-1 flex flex-col gap-4">
-        {/* Stats grid */}
-        <div className="grid grid-cols-3 gap-2">
-          <div>
-            <div className="flex items-center gap-1 mb-0.5">
-              <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Invertido</p>
-              <MetricInfo content="Total gastado en este canal en el período." />
+        {/* Stats grid — adaptativa */}
+        {mode === "investment" ? (
+          <div className="grid grid-cols-3 gap-2">
+            <div>
+              <div className="flex items-center gap-1 mb-0.5">
+                <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Invertido</p>
+                <MetricInfo content="Total gastado en este canal en el período." />
+              </div>
+              <p className="text-sm font-semibold tabular-nums">{formatCurrency(metrics.invested)}</p>
             </div>
-            <p className="text-sm font-semibold tabular-nums">
-              {metrics.invested > 0 ? formatCurrency(metrics.invested) : "—"}
-            </p>
-          </div>
-          <div>
-            <div className="flex items-center gap-1 mb-0.5">
-              <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Retornado</p>
-              <MetricInfo content="Ingresos generados por este canal en el período." />
+            <div>
+              <div className="flex items-center gap-1 mb-0.5">
+                <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Retornado</p>
+                <MetricInfo content="Ingresos generados por este canal en el período." />
+              </div>
+              <p className="text-sm font-semibold tabular-nums">{formatCurrency(metrics.returned)}</p>
             </div>
-            <p className="text-sm font-semibold tabular-nums">
-              {metrics.returned > 0 ? formatCurrency(metrics.returned) : "—"}
-            </p>
-          </div>
-          <div>
-            <div className="flex items-center gap-1 mb-0.5">
-              <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Ganancia</p>
-              <MetricInfo content="Retornado menos Invertido. Verde = ganás, rojo = perdés." />
+            <div>
+              <div className="flex items-center gap-1 mb-0.5">
+                <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Ganancia</p>
+                <MetricInfo content="Retornado menos Invertido. Verde = ganás, rojo = perdés." />
+              </div>
+              <p
+                className={cn(
+                  "text-sm font-semibold tabular-nums",
+                  profitPositive ? "text-emerald-600" : "text-rose-600",
+                )}
+              >
+                {profitPositive ? "+" : ""}
+                {formatCurrency(metrics.profit)}
+              </p>
             </div>
-            <p
-              className={cn(
-                "text-sm font-semibold tabular-nums",
-                metrics.invested > 0
-                  ? profitPositive
-                    ? "text-emerald-600"
-                    : "text-rose-600"
-                  : "text-muted-foreground",
-              )}
-            >
-              {metrics.invested > 0
-                ? `${profitPositive ? "+" : ""}${formatCurrency(metrics.profit)}`
-                : "—"}
-            </p>
           </div>
-        </div>
+        ) : mode === "engagement" ? (
+          <div className="grid grid-cols-3 gap-2">
+            <div>
+              <div className="flex items-center gap-1 mb-0.5">
+                <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Leads</p>
+                <MetricInfo content="Personas que respondieron / convirtieron en este canal." />
+              </div>
+              <p className="text-sm font-semibold tabular-nums">{formatNumber(metrics.leads)}</p>
+            </div>
+            <div>
+              <div className="flex items-center gap-1 mb-0.5">
+                <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Clicks</p>
+                <MetricInfo content="Para email: aperturas. Para LinkedIn: visitas al perfil/mensaje." />
+              </div>
+              <p className="text-sm font-semibold tabular-nums">{formatNumber(metrics.clicks)}</p>
+            </div>
+            <div>
+              <div className="flex items-center gap-1 mb-0.5">
+                <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Impresiones</p>
+                <MetricInfo content="Para email: enviados. Para otros: views totales." />
+              </div>
+              <p className="text-sm font-semibold tabular-nums">{formatNumber(metrics.impressions)}</p>
+            </div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-3 gap-2 opacity-40">
+            <div>
+              <p className="text-[10px] uppercase tracking-widest text-muted-foreground mb-0.5">Invertido</p>
+              <p className="text-sm font-semibold tabular-nums">—</p>
+            </div>
+            <div>
+              <p className="text-[10px] uppercase tracking-widest text-muted-foreground mb-0.5">Retornado</p>
+              <p className="text-sm font-semibold tabular-nums">—</p>
+            </div>
+            <div>
+              <p className="text-[10px] uppercase tracking-widest text-muted-foreground mb-0.5">Ganancia</p>
+              <p className="text-sm font-semibold tabular-nums">—</p>
+            </div>
+          </div>
+        )}
 
-        {/* ROI block */}
+        {/* Block destacado */}
         {roiBlock}
 
         {/* CTA */}

@@ -4,6 +4,7 @@ import { parseDateRange } from "@/lib/date-range";
 import { PeriodSelect } from "@/components/dashboard/period-select";
 import { LosingMoneyBanner } from "@/components/dashboard/losing-money-banner";
 import { InvestmentKpis } from "@/components/dashboard/investment-kpis";
+import { EngagementKpis } from "@/components/dashboard/engagement-kpis";
 import { RoiComparisonChart } from "@/components/dashboard/roi-comparison-chart";
 import { ChannelCardsGrid } from "@/components/dashboard/channel-cards-grid";
 import { HighlightCards } from "@/components/dashboard/highlight-cards";
@@ -42,16 +43,36 @@ export default async function OverviewPage({
       {/* Alert banner */}
       <LosingMoneyBanner hasLosingChannels={summary.hasLosingChannels} />
 
-      {/* 4 KPI cards */}
-      <InvestmentKpis summary={summary} />
+      {/* KPIs: inversión + engagement (este segundo aparece sólo si hay engagement) */}
+      <div className="space-y-4">
+        <div>
+          <p className="text-xs uppercase tracking-widest text-muted-foreground mb-2">
+            Inversión publicitaria
+          </p>
+          <InvestmentKpis summary={summary} />
+        </div>
 
-      {/* Highlight cards */}
-      <HighlightCards best={summary.bestChannel} worst={summary.worstChannel} />
+        {summary.hasAnyEngagement && (
+          <div>
+            <p className="text-xs uppercase tracking-widest text-muted-foreground mb-2">
+              Engagement orgánico
+            </p>
+            <EngagementKpis summary={summary} />
+          </div>
+        )}
+      </div>
 
-      {/* ROI horizontal bar chart */}
-      <RoiComparisonChart perChannel={summary.perChannel} />
+      {/* Highlight cards — sólo si hay inversión real */}
+      {summary.hasAnyInvestment && (
+        <HighlightCards best={summary.bestChannel} worst={summary.worstChannel} />
+      )}
 
-      {/* Channel cards grid */}
+      {/* ROI horizontal bar chart — sólo si hay inversión */}
+      {summary.hasAnyInvestment && (
+        <RoiComparisonChart perChannel={summary.perChannel} />
+      )}
+
+      {/* Channel cards grid — siempre */}
       <ChannelCardsGrid perChannel={summary.perChannel} />
     </div>
   );

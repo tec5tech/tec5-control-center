@@ -200,7 +200,28 @@ export function ChannelDashboard({
       .map(([date, v]) => ({ date, ...v }));
   }, [visibleSnapshots]);
 
-  // Campañas por ROI para BarBreakdown
+  // Detección: ¿este canal tiene datos de inversión (cost/revenue) o sólo de engagement?
+  const hasInvestmentData = useMemo(
+    () => dailyTrend.some((d) => d.cost > 0 || d.revenue > 0),
+    [dailyTrend],
+  );
+
+  // Métrica principal de engagement (leads > clicks > impressions)
+  const engagementKey: "leads" | "clicks" | "impressions" | null = useMemo(() => {
+    if (allTotals.leads > 0) return "leads";
+    if (allTotals.clicks > 0) return "clicks";
+    if (allTotals.impressions > 0) return "impressions";
+    return null;
+  }, [allTotals]);
+
+  const engagementLabel = useMemo(() => {
+    if (!engagementKey) return "Engagement";
+    if (engagementKey === "leads") return labels.primaryPlural ?? "Leads";
+    if (engagementKey === "clicks") return channel === "EMAIL_OUTREACH" ? "Aperturas" : "Clicks";
+    return "Impresiones";
+  }, [engagementKey, labels, channel]);
+
+  // Campañas por ROI para BarBreakdown (cuando hay datos de inversión)
   const perCampaignRoi = useMemo(() => {
     return campaigns
       .map((c) => {
@@ -216,10 +237,30 @@ export function ChannelDashboard({
           color: roi >= 1 ? "#10b981" : "#ef4444",
         };
       })
-      .filter((x) => x.value > 0 || snapshots.some((s) => s.campaignId === x.campaignId))
+      .filter((x) => x.value > 0)
       .sort((a, b) => b.value - a.value)
       .slice(0, 10);
   }, [campaigns, snapshots]);
+
+  // Top campañas por engagement (fallback cuando no hay ROI)
+  const perCampaignEngagement = useMemo(() => {
+    if (!engagementKey) return [];
+    return campaigns
+      .map((c) => {
+        const cs = snapshots.filter((s) => s.campaignId === c.id);
+        const value = cs.reduce((a, b) => a + (b[engagementKey] ?? 0), 0);
+        return {
+          campaignId: c.id,
+          name: c.name.length > 28 ? c.name.slice(0, 26) + "…" : c.name,
+          fullName: c.name,
+          value,
+          color: meta.hex,
+        };
+      })
+      .filter((x) => x.value > 0)
+      .sort((a, b) => b.value - a.value)
+      .slice(0, 10);
+  }, [campaigns, snapshots, engagementKey, meta.hex]);
 
   const tableRows = useMemo(() => {
     return campaigns
@@ -417,41 +458,64 @@ export function ChannelDashboard({
         </div>
       )}
 
-      {/* Gráficos principales */}
+      {/* Gráficos principales — adaptativos: inversión si hay cost/revenue, engagement si no */}
       <div className="grid gap-6 lg:grid-cols-3">
-        {/* AreaTrend dual: Retornado vs Invertido */}
+        {/* Trend principal: dual cost/revenue o single engagement */}
         <Card className="lg:col-span-2">
           <CardHeader>
-            <CardTitle>Retornado vs Invertido por día</CardTitle>
+            <CardTitle>
+              {hasInvestmentData
+                ? "Retornado vs Invertido por día"
+                : `${engagementLabel} por día`}
+            </CardTitle>
             <CardDescription>
               {selectedCampaign
                 ? `Campaña: ${selectedCampaign.name}`
-                : `Período ${rangeLabel}`}
+                : hasInvestmentData
+                  ? `Período ${rangeLabel} · línea verde = retornado, roja = invertido`
+                  : `Período ${rangeLabel} · este canal no trackea inversión directa`}
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {dailyTrend.length > 0 ? (
-              <MultiAreaTrend data={dailyTrend} />
-            ) : (
+            {dailyTrend.length === 0 ? (
               <p className="text-sm text-muted-foreground py-12 text-center">
                 Sin datos en este período.
+              </p>
+            ) : hasInvestmentData ? (
+              <MultiAreaTrend data={dailyTrend} />
+            ) : engagementKey ? (
+              <AreaTrend
+                data={dailyTrend}
+                dataKey={engagementKey}
+                color={meta.hex}
+                height={260}
+              />
+            ) : (
+              <p className="text-sm text-muted-foreground py-12 text-center">
+                Sin métricas de engagement en este período.
               </p>
             )}
           </CardContent>
         </Card>
 
-        {/* BarBreakdown por ROI de campaña */}
-        {perCampaignRoi.length > 0 && (
+        {/* Bar breakdown — ROI si hay datos de inversión, engagement si no */}
+        {(perCampaignRoi.length > 0 || perCampaignEngagement.length > 0) && (
           <Card>
             <CardHeader>
-              <CardTitle>Campañas por ROI</CardTitle>
+              <CardTitle>
+                {perCampaignRoi.length > 0
+                  ? "Campañas por ROI"
+                  : `Top campañas por ${engagementLabel.toLowerCase()}`}
+              </CardTitle>
               <CardDescription>
-                Verde ≥ $1 · rojo &lt; $1 · click para filtrar
+                {perCampaignRoi.length > 0
+                  ? "Verde ≥ $1 · rojo < $1 · click para filtrar"
+                  : "Click para filtrar la tabla"}
               </CardDescription>
             </CardHeader>
             <CardContent>
               <BarBreakdown
-                data={perCampaignRoi}
+                data={perCampaignRoi.length > 0 ? perCampaignRoi : perCampaignEngagement}
                 color={meta.hex}
                 onBarClick={handleBarClick}
                 highlightKey="campaignId"

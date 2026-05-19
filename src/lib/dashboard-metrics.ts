@@ -122,6 +122,12 @@ export type ChannelMetrics = {
   profit: number;
   roi: number;
   trend: "up" | "down" | "stable";
+  // Engagement (canales orgánicos: email outreach, LinkedIn, etc.)
+  leads: number;
+  clicks: number;
+  impressions: number;
+  hasInvestment: boolean;
+  hasEngagement: boolean;
 };
 
 export type DashboardSummary = {
@@ -129,16 +135,24 @@ export type DashboardSummary = {
   totalReturned: number;
   totalProfit: number;
   avgRoi: number;
+  totalLeads: number;
+  totalClicks: number;
+  totalImpressions: number;
   perChannel: ChannelMetrics[];
   bestChannel: ChannelMetrics | null;
   worstChannel: ChannelMetrics | null;
   hasLosingChannels: boolean;
+  hasAnyInvestment: boolean;
+  hasAnyEngagement: boolean;
 };
 
 type AggRow = {
   channel: string;
   invested: number;
   returned: number;
+  leads: number;
+  clicks: number;
+  impressions: number;
 };
 
 async function aggregateByChannel(from: Date, to: Date): Promise<AggRow[]> {
@@ -147,6 +161,9 @@ async function aggregateByChannel(from: Date, to: Date): Promise<AggRow[]> {
     select: {
       cost: true,
       revenue: true,
+      leads: true,
+      clicks: true,
+      impressions: true,
       campaign: { select: { channel: true } },
     },
   });
@@ -154,9 +171,14 @@ async function aggregateByChannel(from: Date, to: Date): Promise<AggRow[]> {
   const map = new Map<string, AggRow>();
   for (const r of rows) {
     const ch = r.campaign.channel;
-    const prev = map.get(ch) ?? { channel: ch, invested: 0, returned: 0 };
+    const prev =
+      map.get(ch) ??
+      { channel: ch, invested: 0, returned: 0, leads: 0, clicks: 0, impressions: 0 };
     prev.invested += r.cost;
     prev.returned += r.revenue;
+    prev.leads += r.leads;
+    prev.clicks += r.clicks;
+    prev.impressions += r.impressions;
     map.set(ch, prev);
   }
   return Array.from(map.values());
@@ -195,8 +217,13 @@ export async function getDashboardSummary(
 
     const invested = cur?.invested ?? 0;
     const returned = cur?.returned ?? 0;
+    const leads = cur?.leads ?? 0;
+    const clicks = cur?.clicks ?? 0;
+    const impressions = cur?.impressions ?? 0;
     const profit = returned - invested;
     const roi = invested > 0 ? returned / invested : 0;
+    const hasInvestment = invested > 0 || returned > 0;
+    const hasEngagement = leads > 0 || clicks > 0 || impressions > 0;
 
     const prevRoi =
       (prev?.invested ?? 0) > 0
@@ -216,6 +243,11 @@ export async function getDashboardSummary(
       profit,
       roi,
       trend,
+      leads,
+      clicks,
+      impressions,
+      hasInvestment,
+      hasEngagement,
     };
   });
 
@@ -223,6 +255,9 @@ export async function getDashboardSummary(
   const totalReturned = perChannel.reduce((a, c) => a + c.returned, 0);
   const totalProfit = totalReturned - totalInvested;
   const avgRoi = totalInvested > 0 ? totalReturned / totalInvested : 0;
+  const totalLeads = perChannel.reduce((a, c) => a + c.leads, 0);
+  const totalClicks = perChannel.reduce((a, c) => a + c.clicks, 0);
+  const totalImpressions = perChannel.reduce((a, c) => a + c.impressions, 0);
 
   const channelsWithData = perChannel.filter((c) => c.invested > 0);
   const sorted = [...channelsWithData].sort((a, b) => b.roi - a.roi);
@@ -230,15 +265,22 @@ export async function getDashboardSummary(
   const bestChannel = sorted[0] ?? null;
   const worstChannel = sorted[sorted.length - 1] ?? null;
   const hasLosingChannels = channelsWithData.some((c) => c.roi < 1);
+  const hasAnyInvestment = totalInvested > 0 || totalReturned > 0;
+  const hasAnyEngagement = totalLeads > 0 || totalClicks > 0 || totalImpressions > 0;
 
   return {
     totalInvested,
     totalReturned,
     totalProfit,
     avgRoi,
+    totalLeads,
+    totalClicks,
+    totalImpressions,
     perChannel,
     bestChannel,
     worstChannel,
     hasLosingChannels,
+    hasAnyInvestment,
+    hasAnyEngagement,
   };
 }
