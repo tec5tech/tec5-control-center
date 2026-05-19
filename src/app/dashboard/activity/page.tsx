@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
@@ -7,6 +8,7 @@ import {
   ArrowRight,
 } from "lucide-react";
 import { MetricInfo } from "@/components/ui/metric-info";
+import { ActivityFilters } from "@/components/activity/activity-filters";
 import { formatCurrency } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
@@ -29,20 +31,37 @@ function payloadLoss(payloadJson: string | null): number | null {
   }
 }
 
-export default async function ActivityPage() {
+export default async function ActivityPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ severity?: string }>;
+}) {
   const session = await auth();
   if (!session?.user) redirect("/login");
+
+  const { severity: severityParam } = await searchParams;
+  const activeFilter = (severityParam ?? "all") as "all" | "critical" | "warn" | "ok";
 
   const alerts = await prisma.alertEvent.findMany({
     orderBy: { createdAt: "desc" },
     take: 200,
   });
 
+  // Conteos totales (siempre los 3 grupos, independiente del filtro activo) para los summary cards
   const critical = alerts.filter((a) => severityGroup(a.severity) === "critical");
   const warn = alerts.filter((a) => severityGroup(a.severity) === "warn");
   const ok = alerts.filter((a) => severityGroup(a.severity) === "ok");
 
-  const isEmpty = alerts.length === 0;
+  // Las listas visibles respetan el filtro
+  const showCritical = activeFilter === "all" || activeFilter === "critical";
+  const showWarn = activeFilter === "all" || activeFilter === "warn";
+  const showOk = activeFilter === "all" || activeFilter === "ok";
+
+  const visibleCount =
+    (showCritical ? critical.length : 0) +
+    (showWarn ? warn.length : 0) +
+    (showOk ? ok.length : 0);
+  const isEmpty = visibleCount === 0;
 
   return (
     <div className="space-y-8">
@@ -54,9 +73,14 @@ export default async function ActivityPage() {
         </p>
       </div>
 
-      {/* Summary cards */}
+      {/* Summary cards — clickeables actúan como filtros */}
       <div className="grid gap-4 sm:grid-cols-3">
-        <div className="flex items-center gap-4 rounded-xl border border-rose-200 bg-rose-50 px-5 py-4">
+        <Link
+          href={activeFilter === "critical" ? "/dashboard/activity" : "/dashboard/activity?severity=critical"}
+          className={`flex items-center gap-4 rounded-xl border bg-rose-50 px-5 py-4 transition hover:shadow-sm ${
+            activeFilter === "critical" ? "border-rose-400 ring-2 ring-rose-200" : "border-rose-200"
+          }`}
+        >
           <div className="grid place-items-center h-10 w-10 rounded-lg bg-rose-100 shrink-0">
             <AlertTriangle className="h-5 w-5 text-rose-600" />
           </div>
@@ -64,8 +88,13 @@ export default async function ActivityPage() {
             <p className="text-3xl font-bold text-foreground tabular-nums">{critical.length}</p>
             <p className="text-xs text-muted-foreground">Requieren acción urgente</p>
           </div>
-        </div>
-        <div className="flex items-center gap-4 rounded-xl border border-amber-200 bg-amber-50 px-5 py-4">
+        </Link>
+        <Link
+          href={activeFilter === "warn" ? "/dashboard/activity" : "/dashboard/activity?severity=warn"}
+          className={`flex items-center gap-4 rounded-xl border bg-amber-50 px-5 py-4 transition hover:shadow-sm ${
+            activeFilter === "warn" ? "border-amber-400 ring-2 ring-amber-200" : "border-amber-200"
+          }`}
+        >
           <div className="grid place-items-center h-10 w-10 rounded-lg bg-amber-100 shrink-0">
             <AlertTriangle className="h-5 w-5 text-amber-600" />
           </div>
@@ -73,8 +102,13 @@ export default async function ActivityPage() {
             <p className="text-3xl font-bold text-foreground tabular-nums">{warn.length}</p>
             <p className="text-xs text-muted-foreground">Para revisar</p>
           </div>
-        </div>
-        <div className="flex items-center gap-4 rounded-xl border border-emerald-200 bg-emerald-50 px-5 py-4">
+        </Link>
+        <Link
+          href={activeFilter === "ok" ? "/dashboard/activity" : "/dashboard/activity?severity=ok"}
+          className={`flex items-center gap-4 rounded-xl border bg-emerald-50 px-5 py-4 transition hover:shadow-sm ${
+            activeFilter === "ok" ? "border-emerald-400 ring-2 ring-emerald-200" : "border-emerald-200"
+          }`}
+        >
           <div className="grid place-items-center h-10 w-10 rounded-lg bg-emerald-100 shrink-0">
             <CheckCircle2 className="h-5 w-5 text-emerald-600" />
           </div>
@@ -82,8 +116,11 @@ export default async function ActivityPage() {
             <p className="text-3xl font-bold text-foreground tabular-nums">{ok.length}</p>
             <p className="text-xs text-muted-foreground">Funcionando bien</p>
           </div>
-        </div>
+        </Link>
       </div>
+
+      {/* Filtros explícitos por tipo de recomendación */}
+      <ActivityFilters active={activeFilter} />
 
       {isEmpty ? (
         <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-border bg-muted/20 py-20 text-center">
@@ -96,7 +133,7 @@ export default async function ActivityPage() {
       ) : (
         <div className="space-y-8">
           {/* Critical */}
-          {critical.length > 0 && (
+          {showCritical && critical.length > 0 && (
             <section className="space-y-3">
               <div className="flex items-center gap-2">
                 <AlertTriangle className="h-4 w-4 text-rose-600" />
@@ -148,7 +185,7 @@ export default async function ActivityPage() {
           )}
 
           {/* Warn */}
-          {warn.length > 0 && (
+          {showWarn && warn.length > 0 && (
             <section className="space-y-3">
               <div className="flex items-center gap-2">
                 <AlertTriangle className="h-4 w-4 text-amber-600" />
@@ -194,7 +231,7 @@ export default async function ActivityPage() {
           )}
 
           {/* OK */}
-          {ok.length > 0 && (
+          {showOk && ok.length > 0 && (
             <section className="space-y-3">
               <div className="flex items-center gap-2">
                 <CheckCircle2 className="h-4 w-4 text-emerald-600" />

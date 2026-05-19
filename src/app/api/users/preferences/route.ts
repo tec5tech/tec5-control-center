@@ -38,11 +38,29 @@ export async function PUT(req: Request) {
   const parsed = schema.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: "Datos inválidos" }, { status: 400 });
 
-  const user = await (prisma.user as unknown as { update: (args: unknown) => Promise<{ id: string }> }).update({
-    where: { id: session.user.id },
-    data: { preferencesJson: JSON.stringify(parsed.data) },
-    select: { id: true },
-  });
-
-  return NextResponse.json({ ok: true, userId: user.id });
+  try {
+    const user = await (
+      prisma.user as unknown as {
+        update: (args: unknown) => Promise<{ id: string }>;
+      }
+    ).update({
+      where: { id: session.user.id },
+      data: { preferencesJson: JSON.stringify(parsed.data) },
+      select: { id: true },
+    });
+    return NextResponse.json({ ok: true, userId: user.id });
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    // La columna preferencesJson todavía no existe en DB — falta correr db:push
+    if (msg.includes("preferencesJson") || msg.includes("column") || msg.includes("does not exist")) {
+      return NextResponse.json(
+        {
+          error: "schema_pending",
+          message: "El schema todavía no fue migrado. Corré `npm run db:push` para habilitar las preferencias.",
+        },
+        { status: 503 },
+      );
+    }
+    throw e;
+  }
 }

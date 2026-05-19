@@ -27,9 +27,11 @@ type Prefs = {
 export function SettingsClient({
   email,
   preferences,
+  schemaPending = false,
 }: {
   email: string;
   preferences: Prefs;
+  schemaPending?: boolean;
 }) {
   const [prefs, setPrefs] = useState<Prefs>({
     emailNotifications: preferences.emailNotifications ?? true,
@@ -50,7 +52,12 @@ export function SettingsClient({
         body: JSON.stringify(prefs),
       });
       if (!res.ok) {
-        toast.error("No se pudo guardar");
+        const data = await res.json().catch(() => null);
+        if (data?.error === "schema_pending") {
+          toast.error("Falta migrar el schema. Corré `npm run db:push` y reintentá.");
+        } else {
+          toast.error("No se pudo guardar");
+        }
         return;
       }
       toast.success("Preferencias guardadas");
@@ -66,6 +73,17 @@ export function SettingsClient({
           Configurá tus preferencias de notificaciones y alertas
         </p>
       </div>
+
+      {schemaPending && (
+        <div className="rounded-xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-800">
+          <p className="font-semibold mb-1">⚠ Migración pendiente</p>
+          <p>
+            La columna <code className="rounded bg-amber-100 px-1 py-0.5 text-xs">preferencesJson</code> todavía no fue
+            creada en la base de datos. Podés ver y tocar los switches, pero no se van a guardar hasta que se aplique
+            la migración (<code className="rounded bg-amber-100 px-1 py-0.5 text-xs">npm run db:push</code>).
+          </p>
+        </div>
+      )}
 
       {/* Notifications card */}
       <div className="rounded-xl border border-border bg-card">
