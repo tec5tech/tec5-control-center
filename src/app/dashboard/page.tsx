@@ -30,7 +30,7 @@ export default async function OverviewPage({
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">
+          <h1 className="text-2xl font-bold text-foreground">
             Resumen de tu Inversión
           </h1>
           <p className="text-muted-foreground mt-1">

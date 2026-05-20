@@ -157,7 +157,7 @@ export default async function CampaignsPage({
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Campañas por Canal</h1>
+          <h1 className="text-2xl font-bold text-foreground">Campañas por Canal</h1>
           <p className="text-muted-foreground mt-1">
             Seleccioná un canal para ver el detalle de cada campaña
           </p>

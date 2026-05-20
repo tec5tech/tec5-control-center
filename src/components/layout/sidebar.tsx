@@ -57,8 +57,8 @@ export function Sidebar({
     <aside className="hidden lg:flex w-64 shrink-0 flex-col border-r border-border bg-card">
       {/* Header */}
       <div className="flex items-center gap-3 px-5 h-16 border-b border-border shrink-0">
-        <div className="grid place-items-center h-9 w-9 rounded-lg bg-slate-900 shrink-0">
-          <TrendingUp className="h-5 w-5 text-white" />
+        <div className="grid place-items-center h-9 w-9 rounded-xl bg-primary shrink-0">
+          <TrendingUp className="h-5 w-5 text-primary-foreground" />
         </div>
         <div className="min-w-0 leading-tight">
           <p className="font-bold text-sm tracking-tight truncate">Mi Inversión</p>
@@ -83,14 +83,14 @@ export function Sidebar({
               className={cn(
                 "group flex items-center gap-3 rounded-md px-3 py-2.5 text-sm transition-colors",
                 active
-                  ? "bg-slate-900 text-white font-medium"
-                  : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                  ? "bg-primary text-primary-foreground font-medium"
+                  : "text-muted-foreground hover:bg-secondary hover:text-foreground",
               )}
             >
               <Icon className="h-4 w-4 shrink-0" />
               <span className="flex-1">{item.label}</span>
               {badge && (
-                <span className="grid place-items-center h-5 min-w-5 rounded-full bg-red-500 px-1 text-[10px] font-bold text-white tabular-nums">
+                <span className="grid place-items-center h-5 min-w-5 rounded-full bg-destructive text-destructive-foreground px-1 text-[10px] font-bold tabular-nums">
                   {unreadAlerts > 99 ? "99+" : unreadAlerts}
                 </span>
               )}

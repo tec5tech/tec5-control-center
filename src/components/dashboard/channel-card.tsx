@@ -69,14 +69,14 @@ export function ChannelCard({ metrics }: { metrics: ChannelMetrics }) {
         className={cn(
           "rounded-lg px-4 py-3 border",
           roiPositive
-            ? "bg-emerald-50 border-emerald-200"
-            : "bg-rose-50 border-rose-200",
+            ? "bg-success/10 border-success/20"
+            : "bg-destructive/10 border-destructive/20",
         )}
       >
         <p
           className={cn(
             "text-3xl font-bold tabular-nums",
-            roiPositive ? "text-emerald-600" : "text-rose-600",
+            roiPositive ? "text-success" : "text-destructive",
           )}
         >
           ${metrics.roi.toFixed(2)}
@@ -147,7 +147,7 @@ export function ChannelCard({ metrics }: { metrics: ChannelMetrics }) {
               <p
                 className={cn(
                   "text-sm font-semibold tabular-nums",
-                  profitPositive ? "text-emerald-600" : "text-rose-600",
+                  profitPositive ? "text-success" : "text-destructive",
                 )}
               >
                 {profitPositive ? "+" : ""}

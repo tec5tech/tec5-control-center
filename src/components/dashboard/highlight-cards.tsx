@@ -37,38 +37,32 @@ export function HighlightCards({
     <div className="grid gap-4 md:grid-cols-2">
       {/* Best */}
       {best ? (
-        <Card className="border-emerald-200 bg-white">
+        <Card className="border-success/20 bg-success/5">
           <CardHeader className="pb-3">
             <div className="flex items-center gap-2">
-              <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-              <span className="text-sm font-semibold">Mejor inversión</span>
-              <span
-                className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium"
-                style={{ backgroundColor: `${best.hex}20`, color: best.hex }}
-              >
-                {best.label}
-              </span>
+              <CheckCircle2 className="h-4 w-4 text-success" />
+              <span className="text-sm font-semibold text-success">Mejor Inversión</span>
               <MetricInfo content="El canal con mayor retorno por cada $1 invertido en el período seleccionado." />
             </div>
           </CardHeader>
           <CardContent className="flex flex-col gap-3">
-            <div className="flex items-center gap-4 rounded-lg bg-emerald-50 border border-emerald-200 p-4">
+            <div className="flex items-start gap-4">
               <div
-                className="grid place-items-center h-12 w-12 rounded-xl shrink-0"
-                style={{ backgroundColor: `${best.hex}20` }}
+                className="grid place-items-center h-12 w-12 rounded-full shrink-0 bg-success/20"
               >
                 <ChannelIcon channel={best.channel} size={24} />
               </div>
-              <div>
-                <p className="text-4xl font-bold text-emerald-600 tabular-nums">
-                  ${best.roi.toFixed(2)}
-                </p>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  ganás por cada $1 invertido
-                </p>
+              <div className="flex-1">
+                <p className="text-xl font-bold text-foreground">{best.label}</p>
+                <p className="text-sm text-muted-foreground mt-0.5">{best.tagline}</p>
+                <div className="mt-3 p-3 bg-success/10 rounded-lg">
+                  <p className="text-2xl font-bold text-success tabular-nums">
+                    ${best.roi.toFixed(2)}
+                  </p>
+                  <p className="text-xs text-success mt-0.5">ganás por cada $1 invertido</p>
+                </div>
               </div>
             </div>
-            <p className="text-xs text-muted-foreground">{best.tagline}</p>
           </CardContent>
         </Card>
       ) : (
@@ -80,64 +74,57 @@ export function HighlightCards({
 
       {/* Worst */}
       {worst && worst.roi < 1 ? (
-        <Card className="border-rose-200 bg-white">
+        <Card className="border-destructive/20 bg-destructive/5">
           <CardHeader className="pb-3">
             <div className="flex items-center gap-2">
-              <XCircle className="h-4 w-4 text-rose-500" />
-              <span className="text-sm font-semibold">Perdiendo dinero</span>
-              <span
-                className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-rose-100 text-rose-700"
-              >
-                {worst.label}
-              </span>
+              <XCircle className="h-4 w-4 text-destructive" />
+              <span className="text-sm font-semibold text-destructive">Perdiendo Dinero</span>
               <MetricInfo content="El canal que menos ROI tiene. Si está por debajo de $1, estás perdiendo plata." />
             </div>
           </CardHeader>
           <CardContent className="flex flex-col gap-3">
-            <div className="flex items-center gap-4 rounded-lg bg-rose-50 border border-rose-200 p-4">
-              <div
-                className="grid place-items-center h-12 w-12 rounded-xl shrink-0"
-                style={{ backgroundColor: `${worst.hex}20` }}
-              >
+            <div className="flex items-start gap-4">
+              <div className="grid place-items-center h-12 w-12 rounded-full shrink-0 bg-destructive/20">
                 <ChannelIcon channel={worst.channel} size={24} />
               </div>
-              <div>
-                <p className="text-4xl font-bold text-rose-600 tabular-nums">
-                  ${worst.roi.toFixed(2)}
-                </p>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  recuperás por cada $1 invertido
-                </p>
+              <div className="flex-1">
+                <p className="text-xl font-bold text-foreground">{worst.label}</p>
+                <p className="text-sm text-muted-foreground mt-0.5">{worst.tagline}</p>
+                <div className="mt-3 p-3 bg-destructive/10 rounded-lg">
+                  <p className="text-2xl font-bold text-destructive tabular-nums">
+                    ${worst.roi.toFixed(2)}
+                  </p>
+                  <p className="text-xs text-destructive mt-0.5">recuperás por cada $1 (pérdida)</p>
+                </div>
               </div>
             </div>
-            <p className="text-xs text-muted-foreground">{worst.tagline}</p>
           </CardContent>
         </Card>
       ) : worst ? (
-        <Card>
+        <Card className="border-warning/20 bg-warning/5">
           <CardHeader className="pb-3">
             <div className="flex items-center gap-2">
-              <XCircle className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm font-semibold">Canal más bajo</span>
-              <span className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-muted text-muted-foreground">
-                {worst.label}
-              </span>
+              <XCircle className="h-4 w-4 text-warning" />
+              <span className="text-sm font-semibold text-warning">Menor Rendimiento</span>
             </div>
           </CardHeader>
-          <CardContent className="flex items-center gap-4 rounded-lg bg-muted/30 border p-4">
-            <div
-              className="grid place-items-center h-12 w-12 rounded-xl shrink-0"
-              style={{ backgroundColor: `${worst.hex}20` }}
-            >
-              <ChannelIcon channel={worst.channel} size={24} />
-            </div>
-            <div>
-              <p className="text-3xl font-bold tabular-nums">
-                ${worst.roi.toFixed(2)}
-              </p>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                por cada $1 invertido
-              </p>
+          <CardContent className="flex flex-col gap-3">
+            <div className="flex items-start gap-4">
+              <div
+                className="grid place-items-center h-12 w-12 rounded-full shrink-0 bg-warning/20"
+              >
+                <ChannelIcon channel={worst.channel} size={24} />
+              </div>
+              <div className="flex-1">
+                <p className="text-xl font-bold text-foreground">{worst.label}</p>
+                <p className="text-sm text-muted-foreground mt-0.5">{worst.tagline}</p>
+                <div className="mt-3 p-3 bg-warning/10 rounded-lg">
+                  <p className="text-2xl font-bold text-warning tabular-nums">
+                    ${worst.roi.toFixed(2)}
+                  </p>
+                  <p className="text-xs text-warning mt-0.5">ganás por cada $1 invertido</p>
+                </div>
+              </div>
             </div>
           </CardContent>
         </Card>

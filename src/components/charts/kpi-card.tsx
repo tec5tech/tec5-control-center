@@ -15,6 +15,7 @@ export function KpiCard({
   icon,
   tooltip,
   valueClassName,
+  cardClassName,
 }: {
   label: string;
   value: string | number;
@@ -22,13 +23,14 @@ export function KpiCard({
   icon?: React.ReactNode;
   tooltip?: string;
   valueClassName?: string;
+  cardClassName?: string;
 }) {
   return (
-    <Card className="p-5 rounded-xl shadow-sm">
+    <Card className={cn("p-6 rounded-xl shadow-sm", cardClassName)}>
       <div className="flex items-start justify-between gap-2">
         <div className="space-y-1 min-w-0 flex-1">
           <div className="flex items-center gap-1">
-            <p className="text-xs uppercase tracking-widest text-muted-foreground truncate">
+            <p className="text-sm text-muted-foreground truncate">
               {label}
             </p>
             {tooltip && (
@@ -51,7 +53,7 @@ export function KpiCard({
               </TooltipProvider>
             )}
           </div>
-          <p className={cn("text-2xl font-semibold tabular-nums", valueClassName)}>
+          <p className={cn("text-3xl font-bold tabular-nums", valueClassName)}>
             {value}
           </p>
           {hint && <p className="text-xs text-muted-foreground">{hint}</p>}

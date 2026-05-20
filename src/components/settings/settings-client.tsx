@@ -335,7 +335,7 @@ export function SettingsClient({ email, preferences, systemSettings, schemaPendi
     <div className="space-y-8">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Ajustes</h1>
+        <h1 className="text-2xl font-bold text-foreground">Ajustes</h1>
         <p className="text-muted-foreground mt-1">
           Configurá tus preferencias de notificaciones y alertas
         </p>
@@ -353,17 +353,17 @@ export function SettingsClient({ email, preferences, systemSettings, schemaPendi
       )}
 
       {/* Notifications card */}
-      <div className="rounded-xl border border-border bg-card">
-        <div className="px-6 py-4 border-b border-border">
-          <div className="flex items-center gap-2">
-            <Bell className="h-4 w-4 text-muted-foreground" />
-            <h2 className="font-semibold">Notificaciones</h2>
+      <div className="rounded-xl border border-border bg-card p-6">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="grid place-items-center h-10 w-10 rounded-lg bg-primary/10 shrink-0">
+            <Bell className="h-5 w-5 text-primary" />
           </div>
-          <p className="text-xs text-muted-foreground mt-0.5">
-            Elegí cómo querés recibir las alertas
-          </p>
+          <div>
+            <h2 className="font-semibold text-foreground">Notificaciones</h2>
+            <p className="text-sm text-muted-foreground">Elegí cómo querés recibir las alertas</p>
+          </div>
         </div>
-        <div className="divide-y divide-border">
+        <div className="space-y-3">
           {(
             [
               {
@@ -392,13 +392,13 @@ export function SettingsClient({ email, preferences, systemSettings, schemaPendi
               },
             ] as const
           ).map(({ key, icon: Icon, label, desc }) => (
-            <div key={key} className="flex items-center gap-4 px-6 py-4">
-              <div className="grid place-items-center h-9 w-9 rounded-lg bg-muted shrink-0">
-                <Icon className="h-4 w-4 text-muted-foreground" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium">{label}</p>
-                <p className="text-xs text-muted-foreground">{desc}</p>
+            <div key={key} className="flex items-center justify-between p-4 bg-muted/30 rounded-lg">
+              <div className="flex items-center gap-3">
+                <Icon className="h-5 w-5 text-muted-foreground" />
+                <div>
+                  <p className="font-medium text-foreground">{label}</p>
+                  <p className="text-sm text-muted-foreground">{desc}</p>
+                </div>
               </div>
               <Switch
                 checked={!!prefs[key]}
@@ -411,67 +411,69 @@ export function SettingsClient({ email, preferences, systemSettings, schemaPendi
       </div>
 
       {/* Alert thresholds card */}
-      <div className="rounded-xl border border-border bg-card">
-        <div className="px-6 py-4 border-b border-border">
-          <div className="flex items-center gap-2">
-            <Target className="h-4 w-4 text-orange-500" />
-            <h2 className="font-semibold">Umbrales de Alerta</h2>
+      <div className="rounded-xl border border-border bg-card p-6">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="grid place-items-center h-10 w-10 rounded-lg bg-warning/10 shrink-0">
+            <Target className="h-5 w-5 text-warning" />
           </div>
-          <p className="text-xs text-muted-foreground mt-0.5">
-            Definí cuándo querés recibir alertas
-          </p>
+          <div>
+            <h2 className="font-semibold text-foreground">Umbrales de Alerta</h2>
+            <p className="text-sm text-muted-foreground">Definí cuándo querés recibir alertas</p>
+          </div>
         </div>
-        <div className="divide-y divide-border">
+        <div className="space-y-3">
           {thresholds.map(({ key, label, desc, color, prefix }) => (
-            <div key={key} className="flex items-center gap-3 px-6 py-4">
-              <div className="flex-1 min-w-0">
+            <div key={key} className="p-4 bg-muted/30 rounded-lg">
+              <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-1">
-                  <p className="text-sm font-medium">{label}</p>
+                  <p className="font-medium text-foreground">{label}</p>
                   <MetricInfo content={thresholdMetricInfo[key]} />
                 </div>
-                <p className="text-xs text-muted-foreground">{desc}</p>
+                <div className="flex items-center gap-2">
+                  <span className={`text-sm font-medium tabular-nums ${color}`}>
+                    {prefix}{settings[key].toFixed(2)}
+                  </span>
+                  <button
+                    onClick={() => openThresholdModal(key, label)}
+                    className="text-xs text-primary hover:underline flex items-center gap-1"
+                    aria-label={`Editar ${label}`}
+                  >
+                    <Pencil className="h-3 w-3" />
+                    Editar
+                  </button>
+                </div>
               </div>
-              <span className={`text-sm font-semibold tabular-nums ${color}`}>
-                {prefix}{settings[key].toFixed(2)}
-              </span>
-              <button
-                onClick={() => openThresholdModal(key, label)}
-                className="ml-1 text-xs text-primary hover:underline flex items-center gap-1"
-                aria-label={`Editar ${label}`}
-              >
-                <Pencil className="h-3 w-3" />
-                Editar
-              </button>
+              <p className="text-sm text-muted-foreground">{desc}</p>
             </div>
           ))}
         </div>
       </div>
 
       {/* My account card */}
-      <div className="rounded-xl border border-border bg-card">
-        <div className="px-6 py-4 border-b border-border">
-          <div className="flex items-center gap-2">
-            <User className="h-4 w-4 text-muted-foreground" />
-            <h2 className="font-semibold">Mi Cuenta</h2>
+      <div className="rounded-xl border border-border bg-card p-6">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="grid place-items-center h-10 w-10 rounded-lg bg-muted shrink-0">
+            <User className="h-5 w-5 text-muted-foreground" />
           </div>
-          <p className="text-xs text-muted-foreground mt-0.5">
-            Información de la cuenta
-          </p>
+          <div>
+            <h2 className="font-semibold text-foreground">Mi Cuenta</h2>
+            <p className="text-sm text-muted-foreground">Información de la cuenta</p>
+          </div>
         </div>
-        <div className="divide-y divide-border">
+        <div className="space-y-3">
           {/* Email — read-only */}
-          <div className="flex items-center gap-3 px-6 py-4">
-            <div className="flex-1 min-w-0">
-              <p className="text-xs uppercase tracking-widest text-muted-foreground">Email</p>
-              <p className="text-sm font-medium mt-0.5">{email}</p>
+          <div className="flex items-center justify-between p-4 bg-muted/30 rounded-lg">
+            <div>
+              <p className="text-sm text-muted-foreground">Email</p>
+              <p className="font-medium text-foreground">{email}</p>
             </div>
           </div>
 
           {/* Timezone — editable */}
-          <div className="flex items-center gap-3 px-6 py-4">
-            <div className="flex-1 min-w-0">
-              <p className="text-xs uppercase tracking-widest text-muted-foreground">Zona horaria</p>
-              <p className="text-sm font-medium mt-0.5">{tzLabel}</p>
+          <div className="flex items-center justify-between p-4 bg-muted/30 rounded-lg">
+            <div>
+              <p className="text-sm text-muted-foreground">Zona horaria</p>
+              <p className="font-medium text-foreground">{tzLabel}</p>
             </div>
             <button
               onClick={() => setTimezoneModalOpen(true)}
@@ -482,10 +484,10 @@ export function SettingsClient({ email, preferences, systemSettings, schemaPendi
           </div>
 
           {/* Currency — editable */}
-          <div className="flex items-center gap-3 px-6 py-4">
-            <div className="flex-1 min-w-0">
-              <p className="text-xs uppercase tracking-widest text-muted-foreground">Moneda</p>
-              <p className="text-sm font-medium mt-0.5">{currLabel}</p>
+          <div className="flex items-center justify-between p-4 bg-muted/30 rounded-lg">
+            <div>
+              <p className="text-sm text-muted-foreground">Moneda</p>
+              <p className="font-medium text-foreground">{currLabel}</p>
             </div>
             <button
               onClick={() => setCurrencyModalOpen(true)}

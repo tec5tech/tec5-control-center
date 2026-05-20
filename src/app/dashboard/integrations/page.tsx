@@ -56,7 +56,7 @@ export default async function IntegrationsPage() {
     <div className="space-y-8">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Conexiones</h1>
+        <h1 className="text-2xl font-bold text-foreground">Conexiones</h1>
         <p className="text-muted-foreground mt-1">
           Plataformas conectadas para obtener tus datos de marketing
         </p>
@@ -64,13 +64,13 @@ export default async function IntegrationsPage() {
 
       {/* Summary cards */}
       <div className="grid gap-4 sm:grid-cols-2">
-        <div className="flex items-center gap-4 rounded-xl border border-emerald-200 bg-emerald-50 px-6 py-5">
-          <div className="grid place-items-center h-12 w-12 rounded-xl bg-emerald-100 shrink-0">
-            <CheckCircle2 className="h-6 w-6 text-emerald-600" />
+        <div className="flex items-center gap-3 rounded-xl border border-success/20 bg-success/5 px-5 py-5">
+          <div className="grid place-items-center h-10 w-10 rounded-full bg-success/20 shrink-0">
+            <CheckCircle2 className="h-5 w-5 text-success" />
           </div>
           <div>
             <div className="flex items-center gap-1">
-              <p className="text-4xl font-bold text-emerald-600 tabular-nums">
+              <p className="text-2xl font-bold text-success tabular-nums">
                 {connected.length}
               </p>
               <MetricInfo content="Plataformas que están enviando datos automáticamente al panel." />
@@ -78,13 +78,13 @@ export default async function IntegrationsPage() {
             <p className="text-sm text-muted-foreground">Conectadas</p>
           </div>
         </div>
-        <div className="flex items-center gap-4 rounded-xl border border-border bg-card px-6 py-5">
-          <div className="grid place-items-center h-12 w-12 rounded-xl bg-muted shrink-0">
-            <XCircle className="h-6 w-6 text-muted-foreground" />
+        <div className="flex items-center gap-3 rounded-xl border border-muted bg-muted/50 px-5 py-5">
+          <div className="grid place-items-center h-10 w-10 rounded-full bg-muted shrink-0">
+            <XCircle className="h-5 w-5 text-muted-foreground" />
           </div>
           <div>
             <div className="flex items-center gap-1">
-              <p className="text-4xl font-bold tabular-nums">{notConnected.length}</p>
+              <p className="text-2xl font-bold tabular-nums">{notConnected.length}</p>
               <MetricInfo content="Plataformas que todavía no enviaron credenciales. Sin conexión, los datos hay que cargarlos a mano." />
             </div>
             <p className="text-sm text-muted-foreground">Sin conectar</p>
@@ -128,18 +128,18 @@ export default async function IntegrationsPage() {
       )}
 
       {/* CTA */}
-      <div className="rounded-xl border border-indigo-200 bg-indigo-50 px-6 py-5 space-y-2">
+      <div className="rounded-xl border border-primary/20 bg-primary/5 px-6 py-5 space-y-2">
         <div className="flex items-center gap-2">
-          <HelpCircle className="h-5 w-5 text-indigo-600 shrink-0" />
-          <h3 className="font-bold text-indigo-900">¿Necesitás ayuda?</h3>
+          <HelpCircle className="h-5 w-5 text-primary shrink-0" />
+          <h3 className="font-semibold text-foreground">¿Necesitás ayuda?</h3>
         </div>
-        <p className="text-sm text-indigo-800">
+        <p className="text-sm text-muted-foreground">
           Si tenés problemas para conectar alguna plataforma, nuestro equipo puede ayudarte a
           configurar las integraciones.
         </p>
         <a
           href="mailto:soporte@tec5.tech"
-          className="mt-2 inline-flex w-full items-center justify-center rounded-lg border border-indigo-300 bg-white px-4 py-2 text-sm font-medium text-indigo-700 hover:bg-indigo-50 transition-colors"
+          className="mt-2 inline-flex w-full items-center justify-center rounded-lg border border-border bg-card px-4 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors"
         >
           Contactar soporte
         </a>

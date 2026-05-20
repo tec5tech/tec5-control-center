@@ -84,7 +84,7 @@ export default async function ActivityPage({
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Alertas y Recomendaciones</h1>
+          <h1 className="text-2xl font-bold text-foreground">Alertas y Recomendaciones</h1>
           <p className="text-muted-foreground mt-1">
             Acciones importantes para optimizar tu inversión
           </p>
@@ -96,44 +96,44 @@ export default async function ActivityPage({
       <div className="grid gap-4 sm:grid-cols-3">
         <Link
           href={activeFilter === "critical" ? activityHref(null) : activityHref("critical")}
-          className={`flex items-center gap-4 rounded-xl border bg-rose-50 px-5 py-4 transition hover:shadow-sm ${
-            activeFilter === "critical" ? "border-rose-400 ring-2 ring-rose-200" : "border-rose-200"
+          className={`flex items-center gap-3 rounded-xl border bg-destructive/5 px-4 py-4 transition hover:shadow-sm ${
+            activeFilter === "critical" ? "border-destructive ring-2 ring-destructive/20" : "border-destructive/20"
           }`}
         >
-          <div className="grid place-items-center h-10 w-10 rounded-lg bg-rose-100 shrink-0">
-            <AlertTriangle className="h-5 w-5 text-rose-600" />
+          <div className="grid place-items-center h-10 w-10 rounded-full bg-destructive/20 shrink-0">
+            <AlertTriangle className="h-5 w-5 text-destructive" />
           </div>
           <div>
-            <p className="text-3xl font-bold text-foreground tabular-nums">{critical.length}</p>
-            <p className="text-xs text-muted-foreground">Requieren acción urgente</p>
+            <p className="text-2xl font-bold text-destructive tabular-nums">{critical.length}</p>
+            <p className="text-sm text-muted-foreground">Requieren acción urgente</p>
           </div>
         </Link>
         <Link
           href={activeFilter === "warn" ? activityHref(null) : activityHref("warn")}
-          className={`flex items-center gap-4 rounded-xl border bg-amber-50 px-5 py-4 transition hover:shadow-sm ${
-            activeFilter === "warn" ? "border-amber-400 ring-2 ring-amber-200" : "border-amber-200"
+          className={`flex items-center gap-3 rounded-xl border bg-warning/5 px-4 py-4 transition hover:shadow-sm ${
+            activeFilter === "warn" ? "border-warning ring-2 ring-warning/20" : "border-warning/20"
           }`}
         >
-          <div className="grid place-items-center h-10 w-10 rounded-lg bg-amber-100 shrink-0">
-            <AlertTriangle className="h-5 w-5 text-amber-600" />
+          <div className="grid place-items-center h-10 w-10 rounded-full bg-warning/20 shrink-0">
+            <AlertTriangle className="h-5 w-5 text-warning" />
           </div>
           <div>
-            <p className="text-3xl font-bold text-foreground tabular-nums">{warn.length}</p>
-            <p className="text-xs text-muted-foreground">Para revisar</p>
+            <p className="text-2xl font-bold text-warning tabular-nums">{warn.length}</p>
+            <p className="text-sm text-muted-foreground">Para revisar</p>
           </div>
         </Link>
         <Link
           href={activeFilter === "ok" ? activityHref(null) : activityHref("ok")}
-          className={`flex items-center gap-4 rounded-xl border bg-emerald-50 px-5 py-4 transition hover:shadow-sm ${
-            activeFilter === "ok" ? "border-emerald-400 ring-2 ring-emerald-200" : "border-emerald-200"
+          className={`flex items-center gap-3 rounded-xl border bg-success/5 px-4 py-4 transition hover:shadow-sm ${
+            activeFilter === "ok" ? "border-success ring-2 ring-success/20" : "border-success/20"
           }`}
         >
-          <div className="grid place-items-center h-10 w-10 rounded-lg bg-emerald-100 shrink-0">
-            <CheckCircle2 className="h-5 w-5 text-emerald-600" />
+          <div className="grid place-items-center h-10 w-10 rounded-full bg-success/20 shrink-0">
+            <CheckCircle2 className="h-5 w-5 text-success" />
           </div>
           <div>
-            <p className="text-3xl font-bold text-foreground tabular-nums">{ok.length}</p>
-            <p className="text-xs text-muted-foreground">Funcionando bien</p>
+            <p className="text-2xl font-bold text-success tabular-nums">{ok.length}</p>
+            <p className="text-sm text-muted-foreground">Funcionando bien</p>
           </div>
         </Link>
       </div>
@@ -153,48 +153,55 @@ export default async function ActivityPage({
         <div className="space-y-8">
           {/* Critical */}
           {showCritical && critical.length > 0 && (
-            <section className="space-y-3">
-              <div className="flex items-center gap-2">
-                <AlertTriangle className="h-4 w-4 text-rose-600" />
-                <h2 className="font-bold text-rose-700">Acción Urgente Requerida</h2>
-              </div>
+            <section className="space-y-4">
+              <h2 className="text-lg font-semibold text-destructive flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5" />
+                Acción Urgente Requerida
+              </h2>
               {critical.map((a) => {
                 const loss = payloadLoss(a.payloadJson);
                 return (
                   <div
                     key={a.id}
-                    className="rounded-xl border border-rose-200 bg-white"
-                    style={{ borderLeftWidth: 4, borderLeftColor: "#f43f5e" }}
+                    className="rounded-xl border border-destructive/20 bg-destructive/5 p-6"
                   >
-                    <div className="p-4 space-y-2">
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="flex-1 min-w-0">
-                          {a.channel && (
-                            <span className="inline-flex items-center rounded-full bg-rose-100 text-rose-700 px-2 py-0.5 text-xs font-medium mb-1">
-                              {a.channel}
-                            </span>
-                          )}
-                          <p className="font-bold text-sm">{a.title}</p>
-                          <p className="text-sm text-muted-foreground mt-0.5">{a.message}</p>
-                        </div>
+                    <div className="flex items-start gap-4">
+                      <div className="grid place-items-center h-12 w-12 rounded-full bg-destructive/20 shrink-0">
+                        <AlertTriangle className="h-6 w-6 text-destructive" />
                       </div>
-                      <div className="rounded-md bg-rose-50 border border-rose-100 px-3 py-2 text-xs text-rose-700">
-                        <strong>Recomendación:</strong>{" "}
-                        Revisá el presupuesto, pausá campañas que no generan retorno y ajustá las pujas.
-                      </div>
-                      <div className="flex items-center justify-between gap-3 pt-1">
-                        <div className="flex items-center gap-1">
-                          {loss !== null && (
-                            <p className="text-xs text-rose-600 font-medium">
-                              Pérdida actual: {formatCurrency(Math.abs(loss))}
-                            </p>
-                          )}
-                          <MetricInfo content="Diferencia negativa entre lo retornado y lo invertido en este canal o campaña." />
+                      <div className="flex-1 min-w-0">
+                        {a.channel && (
+                          <span className="inline-flex items-center rounded-full bg-destructive/20 text-destructive px-2 py-0.5 text-xs font-medium mb-2">
+                            {a.channel}
+                          </span>
+                        )}
+                        <p className="text-lg font-semibold text-foreground">{a.title}</p>
+                        <p className="text-muted-foreground mt-2">{a.message}</p>
+                        <div className="mt-4 p-4 bg-card rounded-lg border border-border">
+                          <div className="flex items-start gap-3">
+                            <div className="text-primary shrink-0 mt-0.5">ℹ</div>
+                            <div>
+                              <p className="font-medium text-foreground">Recomendación:</p>
+                              <p className="text-sm text-muted-foreground mt-1">
+                                Revisá el presupuesto, pausá campañas que no generan retorno y ajustá las pujas.
+                              </p>
+                            </div>
+                          </div>
                         </div>
-                        <button className="inline-flex items-center gap-1 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90">
-                          Tomar acción
-                          <ArrowRight className="h-3 w-3" />
-                        </button>
+                        <div className="mt-4 flex items-center justify-between gap-3">
+                          <div className="flex items-center gap-1">
+                            {loss !== null && (
+                              <p className="text-sm font-medium text-destructive">
+                                Pérdida actual: {formatCurrency(Math.abs(loss))}
+                              </p>
+                            )}
+                            {loss !== null && <MetricInfo content="Diferencia negativa entre lo retornado y lo invertido en este canal o campaña." />}
+                          </div>
+                          <button className="inline-flex items-center gap-2 rounded-md border border-border bg-card px-3 py-1.5 text-sm font-medium hover:bg-muted transition-colors">
+                            Tomar acción
+                            <ArrowRight className="h-4 w-4" />
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -205,43 +212,50 @@ export default async function ActivityPage({
 
           {/* Warn */}
           {showWarn && warn.length > 0 && (
-            <section className="space-y-3">
-              <div className="flex items-center gap-2">
-                <AlertTriangle className="h-4 w-4 text-amber-600" />
-                <h2 className="font-bold text-amber-700">Para Revisar</h2>
-              </div>
+            <section className="space-y-4">
+              <h2 className="text-lg font-semibold text-warning flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5" />
+                Para Revisar
+              </h2>
               {warn.map((a) => {
                 const loss = payloadLoss(a.payloadJson);
                 return (
                   <div
                     key={a.id}
-                    className="rounded-xl border border-amber-200 bg-white"
-                    style={{ borderLeftWidth: 4, borderLeftColor: "#f59e0b" }}
+                    className="rounded-xl border border-warning/20 bg-warning/5 p-6"
                   >
-                    <div className="p-4 space-y-2">
-                      <div className="flex items-start gap-3">
-                        <div className="flex-1 min-w-0">
-                          {a.channel && (
-                            <span className="inline-flex items-center rounded-full bg-amber-100 text-amber-700 px-2 py-0.5 text-xs font-medium mb-1">
-                              {a.channel}
-                            </span>
-                          )}
-                          <p className="font-bold text-sm">{a.title}</p>
-                          <p className="text-sm text-muted-foreground mt-0.5">{a.message}</p>
-                        </div>
+                    <div className="flex items-start gap-4">
+                      <div className="grid place-items-center h-12 w-12 rounded-full bg-warning/20 shrink-0">
+                        <AlertTriangle className="h-6 w-6 text-warning" />
                       </div>
-                      <div className="rounded-md bg-amber-50 border border-amber-100 px-3 py-2 text-xs text-amber-700">
-                        <strong>Recomendación:</strong>{" "}
-                        Analizá las métricas del canal y optimizá el targeting o el creativo.
-                      </div>
-                      {loss !== null && (
-                        <div className="flex items-center gap-1 pt-1">
-                          <p className="text-xs text-amber-600 font-medium">
-                            Pérdida actual: {formatCurrency(Math.abs(loss))}
-                          </p>
-                          <MetricInfo content="Diferencia negativa entre lo retornado y lo invertido." />
+                      <div className="flex-1 min-w-0">
+                        {a.channel && (
+                          <span className="inline-flex items-center rounded-full bg-warning/20 text-warning px-2 py-0.5 text-xs font-medium mb-2">
+                            {a.channel}
+                          </span>
+                        )}
+                        <p className="text-lg font-semibold text-foreground">{a.title}</p>
+                        <p className="text-muted-foreground mt-2">{a.message}</p>
+                        <div className="mt-4 p-4 bg-card rounded-lg border border-border">
+                          <div className="flex items-start gap-3">
+                            <div className="text-primary shrink-0 mt-0.5">ℹ</div>
+                            <div>
+                              <p className="font-medium text-foreground">Recomendación:</p>
+                              <p className="text-sm text-muted-foreground mt-1">
+                                Analizá las métricas del canal y optimizá el targeting o el creativo.
+                              </p>
+                            </div>
+                          </div>
                         </div>
-                      )}
+                        {loss !== null && (
+                          <div className="mt-4 flex items-center gap-1">
+                            <p className="text-sm font-medium text-warning">
+                              Pérdida actual: {formatCurrency(Math.abs(loss))}
+                            </p>
+                            <MetricInfo content="Diferencia negativa entre lo retornado y lo invertido." />
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 );
@@ -251,11 +265,11 @@ export default async function ActivityPage({
 
           {/* OK */}
           {showOk && ok.length > 0 && (
-            <section className="space-y-3">
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-                <h2 className="font-bold text-emerald-700">Funcionando Bien</h2>
-              </div>
+            <section className="space-y-4">
+              <h2 className="text-lg font-semibold text-success flex items-center gap-2">
+                <CheckCircle2 className="h-5 w-5" />
+                Funcionando Bien
+              </h2>
               {ok.map((a) => {
                 let roiText: string | null = null;
                 try {
@@ -270,20 +284,24 @@ export default async function ActivityPage({
                 return (
                   <div
                     key={a.id}
-                    className="rounded-xl border border-emerald-200 bg-white"
-                    style={{ borderLeftWidth: 4, borderLeftColor: "#10b981" }}
+                    className="rounded-xl border border-success/20 bg-success/5 p-6"
                   >
-                    <div className="p-4">
-                      {a.channel && (
-                        <span className="inline-flex items-center rounded-full bg-emerald-100 text-emerald-700 px-2 py-0.5 text-xs font-medium mb-1">
-                          {a.channel}
-                        </span>
-                      )}
-                      <p className="font-bold text-sm">{a.title}</p>
-                      <p className="text-sm text-muted-foreground mt-0.5">{a.message}</p>
-                      {roiText && (
-                        <p className="text-xs text-emerald-600 font-medium mt-2">{roiText}</p>
-                      )}
+                    <div className="flex items-start gap-4">
+                      <div className="grid place-items-center h-12 w-12 rounded-full bg-success/20 shrink-0">
+                        <CheckCircle2 className="h-6 w-6 text-success" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        {a.channel && (
+                          <span className="inline-flex items-center rounded-full bg-success/20 text-success px-2 py-0.5 text-xs font-medium mb-2">
+                            {a.channel}
+                          </span>
+                        )}
+                        <p className="text-lg font-semibold text-foreground">{a.title}</p>
+                        <p className="text-muted-foreground mt-2">{a.message}</p>
+                        {roiText && (
+                          <p className="text-sm font-medium text-success mt-2">{roiText}</p>
+                        )}
+                      </div>
                     </div>
                   </div>
                 );

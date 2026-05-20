@@ -3,45 +3,60 @@
 @tailwind utilities;
 
 /*
-  Paleta Tec5.Tech
+  Paleta v0 — MarketHub (portada desde oklch a hsl para Tailwind v3)
   ------------------
-  Primario: rojo Tec5 (HSL 0 82% 52% aprox)
-  Secundario: grises (neutral 200–800)
-  Fondo claro: blanco puro / casi blanco
-  Fondo oscuro: casi negro / carbón
+  Primario: azul-violeta (#4b3ea6 aprox)
+  Success: verde (#3d8a5e aprox)
+  Warning: amarillo (#b8a040 aprox)
+  Destructive: naranja-rojo (#b85a35 aprox)
 */
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
+    --background: 0 0% 98%;
     --foreground: 0 0% 10%;
 
     --card: 0 0% 100%;
     --card-foreground: 0 0% 10%;
 
     --muted: 0 0% 96%;
-    --muted-foreground: 0 0% 42%;
+    --muted-foreground: 0 0% 45%;
 
     --popover: 0 0% 100%;
     --popover-foreground: 0 0% 10%;
 
     --border: 0 0% 90%;
     --input: 0 0% 90%;
-    --ring: 0 82% 52%;
+    --ring: 250 35% 45%;
 
-    --primary: 0 82% 52%;              /* Rojo Tec5 */
+    --primary: 250 35% 45%;            /* Azul-violeta v0 */
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 0 0% 94%;             /* Gris claro */
-    --secondary-foreground: 0 0% 15%;
+    --secondary: 0 0% 96%;             /* Gris claro */
+    --secondary-foreground: 0 0% 25%;
 
-    --accent: 0 0% 35%;                /* Gris oscuro (acento) */
-    --accent-foreground: 0 0% 100%;
+    --accent: 250 10% 96%;             /* Acento azulado suave */
+    --accent-foreground: 0 0% 25%;
 
-    --destructive: 0 82% 52%;
+    --destructive: 25 50% 50%;         /* Naranja-rojo v0 */
     --destructive-foreground: 0 0% 100%;
 
-    --radius: 0.75rem;
+    --success: 145 35% 42%;            /* Verde v0 */
+    --success-foreground: 0 0% 100%;
+
+    --warning: 45 65% 52%;             /* Amarillo v0 */
+    --warning-foreground: 0 0% 10%;
+
+    --radius: 0.625rem;
+
+    --sidebar: 0 0% 98%;
+    --sidebar-foreground: 0 0% 10%;
+    --sidebar-primary: 250 35% 45%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 250 10% 96%;
+    --sidebar-accent-foreground: 0 0% 25%;
+    --sidebar-border: 0 0% 90%;
+    --sidebar-ring: 250 35% 45%;
   }
 
   .dark {
@@ -59,19 +74,34 @@
 
     --border: 0 0% 18%;
     --input: 0 0% 18%;
-    --ring: 0 85% 58%;
+    --ring: 250 40% 55%;
 
-    --primary: 0 85% 58%;              /* Rojo un poco más luminoso en dark */
+    --primary: 250 40% 55%;
     --primary-foreground: 0 0% 100%;
 
     --secondary: 0 0% 14%;
     --secondary-foreground: 0 0% 98%;
 
-    --accent: 0 0% 75%;                /* Gris claro (acento en dark) */
-    --accent-foreground: 0 0% 10%;
+    --accent: 250 15% 18%;
+    --accent-foreground: 0 0% 98%;
 
-    --destructive: 0 85% 58%;
+    --destructive: 25 55% 60%;
     --destructive-foreground: 0 0% 100%;
+
+    --success: 145 40% 52%;
+    --success-foreground: 0 0% 100%;
+
+    --warning: 45 60% 60%;
+    --warning-foreground: 0 0% 10%;
+
+    --sidebar: 0 0% 10%;
+    --sidebar-foreground: 0 0% 98%;
+    --sidebar-primary: 250 40% 55%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 250 15% 18%;
+    --sidebar-accent-foreground: 0 0% 98%;
+    --sidebar-border: 0 0% 18%;
+    --sidebar-ring: 250 40% 55%;
   }
 
   * {
@@ -131,9 +161,9 @@
   }
 
   /* KPI status colors */
-  .kpi-good  { @apply text-emerald-500; }
-  .kpi-warn  { @apply text-amber-500; }
-  .kpi-bad   { @apply text-rose-500; }
+  .kpi-good  { color: hsl(var(--success)); }
+  .kpi-warn  { color: hsl(var(--warning)); }
+  .kpi-bad   { color: hsl(var(--destructive)); }
 }
 
 /* Recharts */

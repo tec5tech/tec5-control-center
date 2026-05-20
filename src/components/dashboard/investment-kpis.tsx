@@ -31,12 +31,13 @@ export function InvestmentKpis({ summary }: { summary: DashboardSummary }) {
         label="Ganancia Neta"
         value={profitLabel}
         hint="Lo que ganaste después de invertir"
-        valueClassName={totalProfit >= 0 ? "text-emerald-600 font-bold" : "text-rose-600 font-bold"}
+        valueClassName={totalProfit >= 0 ? "text-success font-bold" : "text-destructive font-bold"}
+        cardClassName="border-2 border-success/30"
         icon={
           totalProfit >= 0 ? (
-            <TrendingUp className="h-4 w-4 text-emerald-500" />
+            <TrendingUp className="h-4 w-4 text-success" />
           ) : (
-            <TrendingDown className="h-4 w-4 text-rose-500" />
+            <TrendingDown className="h-4 w-4 text-destructive" />
           )
         }
         tooltip="Total Retornado − Total Invertido."
