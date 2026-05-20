@@ -27,6 +27,7 @@ import { KpiCard } from "@/components/charts/kpi-card";
 import { AreaTrend } from "@/components/charts/area-chart";
 import { PeriodSelect } from "@/components/dashboard/period-select";
 import { RelativeTime } from "@/components/ui/relative-time";
+import { DualAreaTrend } from "@/components/campaigns/dual-area-trend";
 import {
   Card,
   CardContent,
@@ -93,57 +94,6 @@ function BudgetBar({ spend, budget }: { spend: number; budget: number }) {
         <p className="text-xs text-muted-foreground text-right">{pct.toFixed(1)}% utilizado</p>
       )}
     </div>
-  );
-}
-
-// ─── Dual area trend (cost vs revenue) ───────────────────────────────────────
-import {
-  ResponsiveContainer,
-  AreaChart,
-  Area,
-  XAxis,
-  YAxis,
-  Tooltip as RechartsTooltip,
-  CartesianGrid,
-  Legend,
-} from "recharts";
-
-function DualAreaTrend({
-  data,
-}: {
-  data: { date: string; cost: number; revenue: number }[];
-}) {
-  return (
-    <ResponsiveContainer width="100%" height={260}>
-      <AreaChart data={data} margin={{ top: 10, right: 10, left: -18, bottom: 0 }}>
-        <defs>
-          <linearGradient id="grad-rev-detail" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#10b981" stopOpacity={0.45} />
-            <stop offset="100%" stopColor="#10b981" stopOpacity={0} />
-          </linearGradient>
-          <linearGradient id="grad-cost-detail" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#ef4444" stopOpacity={0.35} />
-            <stop offset="100%" stopColor="#ef4444" stopOpacity={0} />
-          </linearGradient>
-        </defs>
-        <CartesianGrid strokeDasharray="3 3" vertical={false} />
-        <XAxis dataKey="date" tickLine={false} axisLine={false} minTickGap={24} />
-        <YAxis tickLine={false} axisLine={false} width={60} />
-        <RechartsTooltip
-          formatter={(v: number, name: string) => [
-            new Intl.NumberFormat("es-AR", {
-              style: "currency",
-              currency: "ARS",
-              maximumFractionDigits: 0,
-            }).format(v),
-            name === "revenue" ? "Retornado" : "Invertido",
-          ]}
-        />
-        <Legend formatter={(val) => (val === "revenue" ? "Retornado" : "Invertido")} />
-        <Area type="monotone" dataKey="revenue" stroke="#10b981" strokeWidth={2} fill="url(#grad-rev-detail)" activeDot={{ r: 5 }} />
-        <Area type="monotone" dataKey="cost" stroke="#ef4444" strokeWidth={2} fill="url(#grad-cost-detail)" activeDot={{ r: 5 }} />
-      </AreaChart>
-    </ResponsiveContainer>
   );
 }
 
