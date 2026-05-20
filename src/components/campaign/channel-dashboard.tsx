@@ -2,9 +2,12 @@
 
 import { useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import {
   DollarSign,
   Eye,
+  ExternalLink,
   Filter,
   MousePointerClick,
   TrendingDown,
@@ -107,6 +110,12 @@ export function ChannelDashboard({
   const labels = getChannelLabels(channel);
   const isLive = integration?.status === "CONNECTED";
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const searchParams = useSearchParams();
+  const periodQuery = (() => {
+    const f = searchParams.get("from");
+    const t = searchParams.get("to");
+    return f && t ? `?from=${f}&to=${t}` : "";
+  })();
 
   const selectedCampaign = useMemo(
     () =>
@@ -359,15 +368,24 @@ export function ChannelDashboard({
               <Filter className="h-4 w-4 text-primary" />
               <span className="text-muted-foreground">Filtrando por campaña:</span>
               <span className="font-medium truncate">{selectedCampaign.name}</span>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="ml-auto h-7 px-2"
-                onClick={() => setSelectedId(null)}
-              >
-                <X className="h-4 w-4" />
-                Quitar filtro
-              </Button>
+              <div className="ml-auto flex items-center gap-1 shrink-0">
+                <Link
+                  href={`/dashboard/campaigns/${selectedCampaign.id}${periodQuery}`}
+                  className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-primary hover:bg-primary/10 transition-colors"
+                >
+                  <ExternalLink className="h-3.5 w-3.5" />
+                  Ver detalle
+                </Link>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 px-2"
+                  onClick={() => setSelectedId(null)}
+                >
+                  <X className="h-4 w-4" />
+                  Quitar filtro
+                </Button>
+              </div>
             </div>
           </motion.div>
         )}

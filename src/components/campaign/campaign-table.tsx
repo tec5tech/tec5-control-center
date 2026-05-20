@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -25,6 +27,12 @@ type Row = {
 
 export function CampaignTable({ campaigns }: { campaigns: Row[] }) {
   const [editing, setEditing] = useState<Row | null>(null);
+  const searchParams = useSearchParams();
+  const periodQuery = (() => {
+    const from = searchParams.get("from");
+    const to = searchParams.get("to");
+    return from && to ? `?from=${from}&to=${to}` : "";
+  })();
 
   if (!campaigns.length) {
     return (
@@ -52,7 +60,12 @@ export function CampaignTable({ campaigns }: { campaigns: Row[] }) {
           </thead>
           <tbody>
             {campaigns.map((c) => (
-              <RowUi key={c.id} row={c} onEdit={() => setEditing(c)} />
+              <RowUi
+                key={c.id}
+                row={c}
+                onEdit={() => setEditing(c)}
+                detailHref={`/dashboard/campaigns/${c.id}${periodQuery}`}
+              />
             ))}
           </tbody>
         </table>
@@ -69,7 +82,7 @@ export function CampaignTable({ campaigns }: { campaigns: Row[] }) {
   );
 }
 
-function RowUi({ row, onEdit }: { row: Row; onEdit: () => void }) {
+function RowUi({ row, onEdit, detailHref }: { row: Row; onEdit: () => void; detailHref: string }) {
   const [status, setStatus] = useState<CampaignStatus>(row.status);
   const [pending, startTransition] = useTransition();
 
@@ -109,15 +122,15 @@ function RowUi({ row, onEdit }: { row: Row; onEdit: () => void }) {
   return (
     <tr className="border-b border-border/60 hover:bg-muted/40 transition-colors">
       <td className="py-3 pr-4">
-        <div className="flex items-center gap-2.5">
+        <Link href={detailHref} className="flex items-center gap-2.5 group">
           <span className="grid place-items-center h-7 w-7 rounded-md bg-muted shrink-0">
             <ChannelIcon channel={row.channel} size={16} />
           </span>
           <div>
-            <p className="font-medium leading-tight">{row.name}</p>
+            <p className="font-medium leading-tight group-hover:text-primary transition-colors">{row.name}</p>
             <p className="text-xs text-muted-foreground">{channelLabel(row.channel)}</p>
           </div>
-        </div>
+        </Link>
       </td>
       <td className="py-3 pr-4">
         <Badge variant={badgeVariant}>{statusLabel(status)}</Badge>
